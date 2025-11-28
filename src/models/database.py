@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .base import Base
+from models.base import Base
 
 # default SQLite path; can be overridden via configuration.
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[2] / "data" / "database.db"

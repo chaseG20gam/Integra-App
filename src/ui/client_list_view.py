@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -26,13 +28,18 @@ class ClientListView(QWidget):
 
         self.client_list = QListWidget(self)
         self.client_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.client_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        
+        # store client data for access when showing details
+        self.client_data_map = {}
 
-        self.add_button = QPushButton("Add Client", self)
-        self.edit_button = QPushButton("Edit", self)
-        self.delete_button = QPushButton("Delete", self)
+        self.add_button = QPushButton("Añadir cliente", self)
+        self.edit_button = QPushButton("Editar", self)
+        self.delete_button = QPushButton("Eliminar", self)
 
         self._build_layout()
         self._populate_placeholder()
+        self._connect_signals()
 
     def _build_layout(self) -> None:
         #c ompose the layout for the list view
@@ -69,3 +76,69 @@ class ClientListView(QWidget):
     def clear_placeholder(self) -> None:
         # remove the data placeholderfs when real data is added
         self.client_list.clear()
+        self.client_data_map.clear()
+
+    def add_client_to_list(self, client_name: str, client_data=None) -> None:
+        # add a client to the list widget        
+        item = QListWidgetItem(client_name)
+        item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.client_list.addItem(item)
+        
+        # store client data for details view
+        if client_data:
+            self.client_data_map[client_name] = client_data
+
+    def _connect_signals(self) -> None:
+        # connect button signals to their handlers
+        self.delete_button.clicked.connect(self._confirm_delete)
+        self.client_list.itemDoubleClicked.connect(self._on_client_double_clicked)
+        self.client_list.customContextMenuRequested.connect(self._show_context_menu)
+
+    def _confirm_delete(self) -> None:
+        # show confirmation dialog before deleting selected client
+        current_item = self.client_list.currentItem()
+        if not current_item:
+            QMessageBox.warning(self, "Nada seleccionado", "Porfavor, selecciona un cliente para eliminar")
+            return
+
+        client_name = current_item.text()
+        reply = QMessageBox.question(
+            self,
+            "Confirmar eliminacion",
+            f"Seguro que quieres eliminar a '{client_name}'?\n\nEsta accion es definitiva y no se puede deshacer",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            # cnnect to controller to actually delete
+            self.client_list.takeItem(self.client_list.row(current_item))
+            # remove from data map
+            if client_name in self.client_data_map:
+                del self.client_data_map[client_name]
+            QMessageBox.information(self, "Eliminado", f"Cliente '{client_name}' eliminado con exito.")
+
+    def _on_client_double_clicked(self, item: QListWidgetItem) -> None:
+        # handle double-click on client item
+        self._show_client_details(item)
+
+    def _show_context_menu(self, position) -> None:
+        # show context menu for client list
+        item = self.client_list.itemAt(position)
+        if item:
+            menu = QMenu(self)
+            view_action = menu.addAction("Ver Cliente")
+            view_action.triggered.connect(lambda: self._show_client_details(item))
+            menu.exec(self.client_list.mapToGlobal(position))
+
+    def _show_client_details(self, item: QListWidgetItem) -> None:
+        # show client details dialog
+        client_name = item.text()
+        if client_name in self.client_data_map:
+            from ui.client_details_dialog import ClientDetailsDialog
+            client_data = self.client_data_map[client_name]
+            # get controller from main window
+            main_window = self.window()
+            controller = getattr(main_window, '_client_controller', None)
+            dialog = ClientDetailsDialog(self, client_data, controller)
+            dialog.exec()

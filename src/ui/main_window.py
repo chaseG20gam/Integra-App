@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QVBoxLayout, QWidget
 
-from .client_list_view import ClientListView
+from ui.client_list_view import ClientListView
+from ui.client_form_dialog import ClientFormDialog
+from controllers.client_controller import ClientController
 
 
 class MainWindow(QMainWindow):
@@ -17,6 +19,10 @@ class MainWindow(QMainWindow):
         self._client_list_view = ClientListView(self)
         self._client_list_view.setObjectName("clientListView")
 
+        self._client_controller = ClientController(self)
+        self._connect_controller_signals()
+        self._connect_ui_signals()
+
         self._central_container = QWidget(self)
         self._central_container.setObjectName("centralContainer")
         self._central_container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -28,6 +34,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._central_container)
 
         self._apply_styling()
+        self._load_initial_data()
 
     def _apply_styling(self) -> None:
         # styling for the looks
@@ -40,13 +47,67 @@ class MainWindow(QMainWindow):
                 background-color: #34495E;
             }
             QWidget#clientListView {
-                background-color: #ECF0F1;
+                background-color: #503e2c;
                 border-radius: 12px;
             }
             """
         )
         self.setMinimumSize(800, 500)
         self.setWindowState(Qt.WindowState.WindowActive)
+
+    def _connect_controller_signals(self) -> None:
+        # connect controller signals to UI updates
+        self._client_controller.clients_loaded.connect(self._on_clients_loaded)
+        self._client_controller.client_added.connect(self._on_client_added)
+        self._client_controller.client_updated.connect(self._on_client_updated)
+        self._client_controller.error_ocurred.connect(self._on_error)
+
+    def _connect_ui_signals(self) -> None:
+        # connect UI button signals
+        self._client_list_view.add_button.clicked.connect(self._show_add_client_dialog)
+
+    def _load_initial_data(self) -> None:
+        # load clients from database on startup
+        self._client_controller.load_all_clients()
+
+    def _on_clients_loaded(self, clients) -> None:
+        # handle loaded clients from controller
+        self._client_list_view.clear_placeholder()
+        # populate with real client data
+        for client in clients:
+            self._client_list_view.add_client_to_list(f"{client.first_name} {client.last_name}", client)
+
+    def _on_client_added(self, client) -> None:
+        # handle new client added
+        self._client_list_view.add_client_to_list(f"{client.first_name} {client.last_name}", client)
+
+    def _on_client_updated(self, client) -> None:
+        # handle client updated - refresh the entire list
+        self._load_initial_data()
+
+    def _on_error(self, error_message: str) -> None:
+        # handle controller errors
+        QMessageBox.critical(self, "Error", error_message)
+
+    def _show_add_client_dialog(self) -> None:
+        # show the add client form dialog
+        dialog = ClientFormDialog(self)
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            if dialog.is_valid():
+                data = dialog.get_form_data()
+                self._client_controller.add_client(
+                    data["first_name"],
+                    data["last_name"],
+                    data["phone"],
+                    data["email"],
+                    data["occupation"],
+                    data["therapy_price"],
+                    data["sports"],
+                    data["background"],
+                    data["observations"]
+                )
+            else:
+                QMessageBox.warning(self, "Datos invalidos", "Nombre y apellidos es un campo obligatorio")
 
     @property
     def client_list_view(self) -> ClientListView:
