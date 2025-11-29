@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog
 
 from ui.client_form_view import ClientFormView
 
@@ -30,7 +30,57 @@ class ClientFormDialog(QDialog):
         self.form_view.cancel_button.clicked.connect(self.reject)
         
         # set the form as the dialogs main widget
-        self.setLayout(self.form_view.layout())
+        self.setLayout(self.form_view.layout())        
+        # apply elegant blue-gray styling
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0F172A;
+                color: #E2E8F0;
+            }
+            QLabel {
+                color: #E2E8F0;
+                font-weight: bold;
+            }
+            QLineEdit, QDoubleSpinBox, QTextEdit {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                padding: 8px;
+                color: #E2E8F0;
+                font-size: 13px;
+            }
+            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus {
+                border-color: #3B82F6;
+            }
+            QPushButton {
+                background-color: #334155;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: #E2E8F0;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #475569;
+            }
+            QPushButton:pressed {
+                background-color: #1E293B;
+            }
+            QCheckBox {
+                color: #E2E8F0;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #475569;
+                border-radius: 3px;
+                background-color: #1E293B;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #3B82F6;
+                border-color: #3B82F6;
+            }
+        """)
 
     def _populate_form(self, client_data) -> None:
         # populate form fields with existing client data

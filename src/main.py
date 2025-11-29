@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 
 from models.database import init_database
 from  ui.main_window import MainWindow

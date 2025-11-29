@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QVBoxLayout, QWidget
 
 from ui.client_list_view import ClientListView
 from ui.client_form_dialog import ClientFormDialog
@@ -41,14 +41,16 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(
             """
             QMainWindow {
-                background-color: #2C3E50;
+                background-color: #0F172A;
             }
             QWidget#centralContainer {
-                background-color: #34495E;
+                background-color: #1E293B;
+                border: 1px solid #334155;
             }
             QWidget#clientListView {
-                background-color: #503e2c;
+                background-color: #334155;
                 border-radius: 12px;
+                border: 1px solid #475569;
             }
             """
         )
@@ -60,6 +62,7 @@ class MainWindow(QMainWindow):
         self._client_controller.clients_loaded.connect(self._on_clients_loaded)
         self._client_controller.client_added.connect(self._on_client_added)
         self._client_controller.client_updated.connect(self._on_client_updated)
+        self._client_controller.client_deleted.connect(self._on_client_deleted)
         self._client_controller.error_ocurred.connect(self._on_error)
 
     def _connect_ui_signals(self) -> None:
@@ -84,6 +87,11 @@ class MainWindow(QMainWindow):
     def _on_client_updated(self, client) -> None:
         # handle client updated - refresh the entire list
         self._load_initial_data()
+    
+    def _on_client_deleted(self, client_id: int) -> None:
+        # handle client deleted - show pulse animation to encourage manual refresh
+        # note: auto-refresh disabled to show user-friendly pulse animation
+        self._client_list_view.highlight_refresh_needed()
 
     def _on_error(self, error_message: str) -> None:
         # handle controller errors
