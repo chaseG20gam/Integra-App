@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from PySide6.QtCore import QObject, Signal
+from PyQt6.QtCore import QObject, pyqtSignal as Signal
 from sqlalchemy.exc import SQLAlchemyError
 
 from models.client import Client
@@ -108,7 +108,7 @@ class ClientController(QObject):
                     session.delete(client)
                     self.client_deleted.emit(client_id)
                 else:
-                    self.error_occurred.emit(f"Client with ID {client_id} not found")
+                    self.error_ocurred.emit(f"Client with ID {client_id} not found")
         except SQLAlchemyError as e:
             self.error_ocurred.emit(f"Failed to delete client: {str(e)}")
 

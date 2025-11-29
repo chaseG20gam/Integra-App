@@ -1,8 +1,8 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
     QDialog,
     QFormLayout,
     QHBoxLayout,
@@ -32,11 +32,9 @@ class ClientDetailsDialog(QDialog):
         self.delete_button = QPushButton("Eliminar Cliente", self)
         self.close_button = QPushButton("Cerrar", self)
         
-        # style delete button to make VERY red
-        self.delete_button.setStyleSheet("QPushButton { background-color: #E74C3C; color: white; font-weight: bold; }")
-
         self._build_layout()
         self._connect_signals()
+        self._apply_styling()
 
     def _build_layout(self) -> None:
         # build the details layout
@@ -81,16 +79,16 @@ class ClientDetailsDialog(QDialog):
     def _add_field(self, form_layout: QFormLayout, label: str, value: str, multiline: bool = False) -> None:
         # add a field to the form layout
         label_widget = QLabel(label)
-        label_widget.setStyleSheet("font-weight: bold; color: #2C3E50;")
+        label_widget.setStyleSheet("font-weight: bold; color: #94A3B8;")
 
         value_widget = QLabel(value if value.strip() else "(No especificado)")
         if multiline:
             value_widget.setWordWrap(True)
             value_widget.setAlignment(Qt.AlignmentFlag.AlignTop)
             value_widget.setMinimumHeight(80)
-            value_widget.setStyleSheet("QLabel { background-color: #F8F9FA; padding: 8px; border: 1px solid #DEE2E6; border-radius: 4px; color: #495057; }")
+            value_widget.setStyleSheet("QLabel { background-color: #1E293B; padding: 8px; border: 1px solid #334155; border-radius: 4px; color: #E2E8F0; }")
         else:
-            value_widget.setStyleSheet("color: #495057;")
+            value_widget.setStyleSheet("color: #E2E8F0;")
 
         form_layout.addRow(label_widget, value_widget)
 
@@ -128,6 +126,59 @@ class ClientDetailsDialog(QDialog):
                     print("No controller available")
                         
                 self.accept()  # close details dialog after edit
+    
+    def _apply_styling(self) -> None:
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0F172A;
+                color: #E2E8F0;
+            }
+            QLabel {
+                color: #E2E8F0;
+            }
+            QScrollArea {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 8px;
+            }
+            QWidget {
+                background-color: transparent;
+            }
+            QPushButton {
+                background-color: #334155;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: #E2E8F0;
+                font-weight: bold;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #475569;
+            }
+            QPushButton:pressed {
+                background-color: #1E293B;
+            }
+        """)
+        
+        # special styling for delete button
+        self.delete_button.setStyleSheet("""
+            QPushButton {
+                background-color: #DC2626;
+                border: 1px solid #B91C1C;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: white;
+                font-weight: bold;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
+            }
+        """)
 
     def _confirm_delete_client(self) -> None:
         """Show confirmation dialog before deleting client."""
@@ -142,9 +193,27 @@ class ClientDetailsDialog(QDialog):
 
         if reply == QMessageBox.StandardButton.Yes:
             if self.controller:
-                print(f"Deleting client ID: {self.client_data.id}")
+                # connect to the controller's signals to handle success/error
+                self.controller.client_deleted.connect(self._on_deletion_success)
+                self.controller.error_ocurred.connect(self._on_deletion_error)
+                
+                # perform deletion
                 self.controller.delete_client(self.client_data.id)
-                QMessageBox.information(self, "Eliminado", f"Cliente '{client_name}' eliminado con éxito.")
-                self.accept()  # Close dialog after successful deletion
             else:
                 QMessageBox.critical(self, "Error", "No se pudo eliminar el cliente: controlador no disponible.")
+    
+    def _on_deletion_success(self, client_id: int) -> None:
+        # disconnect signals to avoid duplicate connections
+        self.controller.client_deleted.disconnect(self._on_deletion_success)
+        self.controller.error_ocurred.disconnect(self._on_deletion_error)
+        
+        client_name = f"{self.client_data.first_name} {self.client_data.last_name}"
+        QMessageBox.information(self, "Eliminado", f"Cliente '{client_name}' eliminado con éxito.")
+        self.accept()  # Close dialog after successful deletion
+    
+    def _on_deletion_error(self, error_message: str) -> None:
+        # disconnect signals
+        self.controller.client_deleted.disconnect(self._on_deletion_success)
+        self.controller.error_ocurred.disconnect(self._on_deletion_error)
+        
+        QMessageBox.critical(self, "Error de eliminación", error_message)
