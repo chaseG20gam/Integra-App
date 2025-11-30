@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import (
+from PyQt6.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
     QFormLayout,
@@ -83,6 +83,8 @@ class ClientFormView(QWidget):
 
         form_layout.addRow(button_row)
         self.setLayout(form_layout)
+        
+        self._apply_styling()
 
     def _setup_sports_logic(self) -> None: 
         # when checkbox is checked, clear and disable text field
@@ -100,3 +102,54 @@ class ClientFormView(QWidget):
     def _on_sports_text_changed(self, text: str) -> None:
         if text.strip() and self.sports_none_checkbox.isChecked():
             self.sports_none_checkbox.setChecked(False)
+    
+    def _apply_styling(self) -> None:
+        self.setStyleSheet("""
+            QWidget {
+                background-color: transparent;
+                color: #E2E8F0;
+            }
+            QLabel {
+                color: #E2E8F0;
+                font-weight: bold;
+            }
+            QLineEdit, QDoubleSpinBox, QTextEdit {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                padding: 8px;
+                color: #E2E8F0;
+                font-size: 13px;
+            }
+            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus {
+                border-color: #3B82F6;
+            }
+            QPushButton {
+                background-color: #334155;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: #E2E8F0;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #475569;
+            }
+            QPushButton:pressed {
+                background-color: #1E293B;
+            }
+            QCheckBox {
+                color: #E2E8F0;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #475569;
+                border-radius: 3px;
+                background-color: #1E293B;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #3B82F6;
+                border-color: #3B82F6;
+            }
+        """)
