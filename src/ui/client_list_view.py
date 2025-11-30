@@ -24,7 +24,7 @@ class ClientListView(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Search clients...")
+        self.search_input.setPlaceholderText("Search clients...") 
 
         self.client_list = QListWidget(self)
         self.client_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
