@@ -25,11 +25,22 @@ class ClientListView(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Search clients...") 
+        self.search_input.setPlaceholderText("Buscar clientes...") 
 
         self.client_list = QListWidget(self)
         self.client_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self.client_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        
+        # make text bigger with white line separators
+        self.client_list.setStyleSheet("""
+            QListWidget {
+                font-size: 20px;
+            }
+            QListWidget::item {
+                border-bottom: 1px solid white;
+                padding: 6px;
+            }
+        """)
         
         # store client data for access when showing details
         self.client_data_map = {}
@@ -64,7 +75,7 @@ class ClientListView(QWidget):
 
         # header with title and refresh button
         header_layout = QHBoxLayout()
-        header_layout.addWidget(QLabel("Clients", self))
+        header_layout.addWidget(QLabel("Clientes", self))
         header_layout.addStretch(1)
         header_layout.addWidget(self.refresh_button)
         
@@ -117,6 +128,8 @@ class ClientListView(QWidget):
         self.refresh_button.clicked.connect(self._on_refresh_clicked)
         self.client_list.itemDoubleClicked.connect(self._on_client_double_clicked)
         self.client_list.customContextMenuRequested.connect(self._show_context_menu)
+        # connect search input
+        self.search_input.textChanged.connect(self._on_search_changed)
 
     def _confirm_delete(self) -> None:
         # show confirmation dialog before deleting selected client
@@ -266,6 +279,11 @@ class ClientListView(QWidget):
         self.start_pulse_animation()
     
     def _apply_styling(self) -> None:
+        # default to dark theme
+        self._apply_dark_theme()
+    
+    def _apply_dark_theme(self) -> None:
+        # apply dark theme styling
         self.setStyleSheet("""
             QWidget {
                 color: #E2E8F0;
@@ -318,3 +336,85 @@ class ClientListView(QWidget):
                 background-color: #1E293B;
             }
         """)
+    
+    def _apply_light_theme(self) -> None:
+        # apply beautiful light theme styling
+        self.setStyleSheet("""
+            QWidget {
+                color: #1E293B;
+            }
+            QLabel {
+                color: #1E293B;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QLineEdit {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #FFFFFF, stop:1 #F8FAFC);
+                border: 2px solid #CBD5E1;
+                border-radius: 8px;
+                padding: 10px;
+                color: #1E293B;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border-color: #3B82F6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #FFFFFF, stop:1 #EFF6FF);
+            }
+            QListWidget {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #FFFFFF, stop:1 #F8FAFC);
+                border: 2px solid #CBD5E1;
+                border-radius: 10px;
+                color: #1E293B;
+                alternate-background-color: #F1F5F9;
+            }
+            QListWidget::item {
+                padding: 14px;
+                border-bottom: 1px solid #E2E8F0;
+                margin: 1px;
+                border-radius: 4px;
+            }
+            QListWidget::item:selected {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #DBEAFE, stop:1 #BFDBFE);
+                color: #1E40AF;
+            }
+            QListWidget::item:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #F1F5F9, stop:1 #E2E8F0);
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #EFF6FF, stop:1 #DBEAFE);
+                border: 2px solid #93C5FD;
+                border-radius: 8px;
+                padding: 12px 18px;
+                color: #1E40AF;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #DBEAFE, stop:1 #BFDBFE);
+            }
+            QPushButton:pressed {
+                background: #BFDBFE;
+            }
+        """)
+
+    def _on_search_changed(self, text: str) -> None:
+        # handle search input changes
+        # get controller from main window
+        main_window = self.window()
+        controller = getattr(main_window, '_client_controller', None)
+        
+        if controller:
+            if text.strip():
+                # search with the entered text
+                controller.search_clients(text.strip())
+            else:
+                # if search is empty, load all clients
+                controller.load_all_clients()
+        else:
+            print("Error de busqueda o controlador")

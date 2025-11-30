@@ -57,7 +57,7 @@ class ClientDetailsDialog(QDialog):
         self._add_field(form_layout, "Correo electrónico:", self.client_data.email or "No proporcionado")
         self._add_field(form_layout, "Profesión:", self.client_data.occupation or "No especificado")
         
-        price_text = f"${self.client_data.therapy_price:.2f}" if self.client_data.therapy_price else "No establecido"
+        price_text = f"€{self.client_data.therapy_price:.2f}" if self.client_data.therapy_price else "No establecido"
         self._add_field(form_layout, "Precio de terapia:", price_text)
         
         self._add_field(form_layout, "Deportes:", self.client_data.sports or "Ninguno")
