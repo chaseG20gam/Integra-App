@@ -279,7 +279,7 @@ class ClientListView(QWidget):
         self.start_pulse_animation()
     
     def _apply_styling(self) -> None:
-        # apply professional theme styling
+        # apply theme styling
         self.setStyleSheet("""
             QWidget {
                 color: #E2E8F0;

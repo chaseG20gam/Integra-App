@@ -3,15 +3,18 @@ from __future__ import annotations
 import os
 import shutil
 from datetime import datetime
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QMessageBox, QVBoxLayout, QWidget, QFileDialog
-from PyQt6.QtGui import QAction, QDesktopServices
+from PyQt6.QtCore import Qt, QPropertyAnimation, QTimer, pyqtProperty
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QVBoxLayout, QWidget, QFileDialog, QHBoxLayout
+from PyQt6.QtGui import QAction, QDesktopServices, QIcon
 from PyQt6.QtCore import QUrl
 
 from ui.client_list_view import ClientListView
 from ui.client_form_dialog import ClientFormDialog
 from ui.about_dialog import AboutDialog
+from ui.simple_update_dialog import SimpleUpdateDialog
 from controllers.client_controller import ClientController
+from utils.simple_updater import SimpleUpdateManager
+from utils.version import CURRENT_VERSION
 
 
 class MainWindow(QMainWindow):
@@ -26,7 +29,16 @@ class MainWindow(QMainWindow):
         self._client_list_view.setObjectName("clientListView")
 
         self._client_controller = ClientController(self)
+        
+        # initialize update system
+        self.update_manager = SimpleUpdateManager(self)
+        self.update_button = None
+        self._glow_opacity = 1.0
+        self._pulse_animation = None
+        self.current_update_info = None
+        
         self._setup_menu_bar()
+        self._setup_update_system()
         self._connect_controller_signals()
         self._connect_ui_signals()
 
@@ -76,6 +88,14 @@ class MainWindow(QMainWindow):
         shortcuts_action.setStatusTip('Ver lista de atajos de teclado disponibles')
         shortcuts_action.triggered.connect(self._show_shortcuts)
         help_menu.addAction(shortcuts_action)
+        
+        help_menu.addSeparator()
+        
+        # check for updates action
+        update_check_action = QAction('&Buscar Actualizaciones', self)
+        update_check_action.setStatusTip('Comprobar si hay actualizaciones disponibles')
+        update_check_action.triggered.connect(self._manual_update_check)
+        help_menu.addAction(update_check_action)
         
         help_menu.addSeparator()
         
@@ -232,6 +252,125 @@ class MainWindow(QMainWindow):
         # show the About dialog created with Qt Designer
         about_dialog = AboutDialog(self)
         about_dialog.exec()
+    
+    def _setup_update_system(self) -> None:
+        # connect update manager signals
+        self.update_manager.update_available.connect(self._on_update_available)
+        self.update_manager.no_update_available.connect(self._on_no_update_available)
+        self.update_manager.update_check_failed.connect(self._on_update_check_failed)
+        
+        # create update notification button (initially hidden)
+        self._create_update_button()
+    
+    def _create_update_button(self) -> None:
+        # create the glowing update notification button
+        from PyQt6.QtWidgets import QPushButton
+        from PyQt6.QtCore import QSize
+        
+        self.update_button = QPushButton("Update")
+        self.update_button.setObjectName("updateButton")
+        self.update_button.setMaximumSize(QSize(100, 28))
+        self.update_button.setVisible(False)
+        self.update_button.clicked.connect(self._show_update_dialog)
+        
+        # add to menu bar
+        menubar = self.menuBar()
+        menubar.setCornerWidget(self.update_button, Qt.Corner.TopRightCorner)
+    
+    @pyqtProperty(float)
+    def glow_opacity(self) -> float:
+        return self._glow_opacity
+    
+    @glow_opacity.setter
+    def glow_opacity(self, value: float) -> None:
+        self._glow_opacity = value
+        self._update_button_glow()
+    
+    def _update_button_glow(self) -> None:
+        if not self.update_button or not self.update_button.isVisible():
+            return
+        
+        # create faint yellow glowing effect with opacity
+        glow_opacity = max(0.3, self._glow_opacity * 0.6)  # keep it faint
+        glow_color = f"rgba(245, 158, 11, {glow_opacity})"  # yellow 
+        
+        self.update_button.setStyleSheet(f"""
+            QPushButton#updateButton {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #F59E0B, stop:1 #D97706);
+                border: 1px solid {glow_color};
+                border-radius: 6px;
+                padding: 4px 10px;
+                color: #1F2937;
+                font-weight: bold;
+                font-size: 11px;
+            }}
+            QPushButton#updateButton:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #D97706, stop:1 #B45309);
+            }}
+            QPushButton#updateButton:pressed {{
+                background: #B45309;
+            }}
+        """)
+    
+    def _start_glow_animation(self) -> None:
+        if self._pulse_animation:
+            self._pulse_animation.stop()
+        
+        # create pulsing glow animation
+        self._pulse_animation = QPropertyAnimation(self, b"glow_opacity")
+        self._pulse_animation.setDuration(1500)  # 1.5 second pulse
+        self._pulse_animation.setStartValue(0.3)
+        self._pulse_animation.setEndValue(1.0)
+        self._pulse_animation.setLoopCount(-1)  # infinite loop
+        
+        # start animation
+        self._pulse_animation.start()
+    
+    def _stop_glow_animation(self) -> None:
+        # stop the glowing animation
+        if self._pulse_animation:
+            self._pulse_animation.stop()
+            self._pulse_animation = None
+        self._glow_opacity = 1.0
+        self._update_button_glow()
+    
+    def _on_update_available(self, update_info) -> None:
+        # update handler
+        # show the update button with faint yellow glowing effect
+        self.update_button.setVisible(True)
+        self._start_glow_animation()
+        
+        # store update info for dialog
+        self.current_update_info = update_info
+        
+        # show a subtle notification
+        self.statusBar().showMessage(f"Update available: v{update_info.version}", 3000)
+    
+    def _on_no_update_available(self) -> None:
+        self.statusBar().showMessage("No updates available - you're on the latest version!", 3000)
+    
+    def _on_update_check_failed(self, error: str) -> None:
+        # handle when update check fails
+        # show error for manual checks
+        self.statusBar().showMessage(f"Update check failed: {error}", 5000)
+    
+    def _show_update_dialog(self) -> None:
+        if hasattr(self, 'current_update_info') and self.current_update_info:
+            # stop glowing animation when user interacts
+            self._stop_glow_animation()
+            
+            dialog = SimpleUpdateDialog(self.current_update_info, self)
+            result = dialog.exec()
+            
+            # hide update button after user interaction (regardless of choice)
+            self.update_button.setVisible(False)
+            self.current_update_info = None
+    
+    def _manual_update_check(self) -> None:
+        self.update_manager.check_for_update()
+        self.statusBar().showMessage("Checking for updates...", 3000)
 
     def _apply_styling(self) -> None:
         # apply theme styling

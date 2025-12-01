@@ -47,9 +47,10 @@ class AboutDialog(QDialog):
         layout.addWidget(self.titleLabel)
         
         # description label
+        from utils.version import CURRENT_VERSION
         self.descriptionLabel = QLabel(
             "Sistema de gestión de clientes desarrollado para Integra\n\n"
-            "Versión 1.0\n" 
+            f"Versión {CURRENT_VERSION}\n" 
             "Desarrollado por ChaseG20GAM\n\n"
             "© 2025 Integra",
             self
