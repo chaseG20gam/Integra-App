@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 from ui.client_form_dialog import ClientFormDialog
 
 
+
 class ClientDetailsDialog(QDialog):
     # dialog for displaying detailed client information
 
@@ -79,16 +80,16 @@ class ClientDetailsDialog(QDialog):
     def _add_field(self, form_layout: QFormLayout, label: str, value: str, multiline: bool = False) -> None:
         # add a field to the form layout
         label_widget = QLabel(label)
-        label_widget.setStyleSheet("font-weight: bold; color: #94A3B8;")
-
+        label_widget.setObjectName("fieldLabel")
+        
         value_widget = QLabel(value if value.strip() else "(No especificado)")
         if multiline:
             value_widget.setWordWrap(True)
             value_widget.setAlignment(Qt.AlignmentFlag.AlignTop)
             value_widget.setMinimumHeight(80)
-            value_widget.setStyleSheet("QLabel { background-color: #1E293B; padding: 8px; border: 1px solid #334155; border-radius: 4px; color: #E2E8F0; }")
+            value_widget.setObjectName("multilineValue")
         else:
-            value_widget.setStyleSheet("color: #E2E8F0;")
+            value_widget.setObjectName("singleValue")
 
         form_layout.addRow(label_widget, value_widget)
 
@@ -128,12 +129,27 @@ class ClientDetailsDialog(QDialog):
                 self.accept()  # close details dialog after edit
     
     def _apply_styling(self) -> None:
+        # apply professional theme styling
         self.setStyleSheet("""
             QDialog {
                 background-color: #0F172A;
                 color: #E2E8F0;
             }
             QLabel {
+                color: #E2E8F0;
+            }
+            QLabel#fieldLabel {
+                font-weight: bold; 
+                color: #94A3B8;
+            }
+            QLabel#singleValue {
+                color: #E2E8F0;
+            }
+            QLabel#multilineValue {
+                background-color: #1E293B; 
+                padding: 8px; 
+                border: 1px solid #334155; 
+                border-radius: 4px; 
                 color: #E2E8F0;
             }
             QScrollArea {
@@ -161,7 +177,7 @@ class ClientDetailsDialog(QDialog):
             }
         """)
         
-        # special styling for delete button
+        # applystyling for delete button after main styling
         self.delete_button.setStyleSheet("""
             QPushButton {
                 background-color: #DC2626;
@@ -179,9 +195,11 @@ class ClientDetailsDialog(QDialog):
                 background-color: #991B1B;
             }
         """)
+    
+
 
     def _confirm_delete_client(self) -> None:
-        """Show confirmation dialog before deleting client."""
+        # show confirmation dialog before deleting client
         client_name = f"{self.client_data.first_name} {self.client_data.last_name}"
         reply = QMessageBox.question(
             self,
@@ -209,7 +227,7 @@ class ClientDetailsDialog(QDialog):
         
         client_name = f"{self.client_data.first_name} {self.client_data.last_name}"
         QMessageBox.information(self, "Eliminado", f"Cliente '{client_name}' eliminado con éxito.")
-        self.accept()  # Close dialog after successful deletion
+        self.accept()  # close dialog after successful deletion
     
     def _on_deletion_error(self, error_message: str) -> None:
         # disconnect signals

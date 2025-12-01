@@ -26,7 +26,6 @@ class MainWindow(QMainWindow):
         self._client_list_view.setObjectName("clientListView")
 
         self._client_controller = ClientController(self)
-        self._is_dark_theme = True  # start with dark theme
         self._setup_menu_bar()
         self._connect_controller_signals()
         self._connect_ui_signals()
@@ -68,15 +67,6 @@ class MainWindow(QMainWindow):
         data_folder_action.setStatusTip('Abrir la carpeta donde se guardan los datos')
         data_folder_action.triggered.connect(self._open_data_folder)
         tools_menu.addAction(data_folder_action)
-        
-        # view menu for theme options
-        view_menu = menubar.addMenu('&Ver')
-        
-        # theme toggle action
-        self.theme_action = QAction('Cambiar a Tema &Claro', self)
-        self.theme_action.setStatusTip('Alternar entre tema oscuro y claro')
-        self.theme_action.triggered.connect(self._toggle_theme)
-        view_menu.addAction(self.theme_action)
         
         # help menu
         help_menu = menubar.addMenu('&Ayuda')
@@ -236,16 +226,7 @@ class MainWindow(QMainWindow):
         """)
         msg.exec()
 
-    def _toggle_theme(self) -> None:
-        # toggle between dark and light themes
-        self._is_dark_theme = not self._is_dark_theme
-        self._apply_styling()
-        
-        # update menu text
-        if self._is_dark_theme:
-            self.theme_action.setText('Cambiar a Tema &Claro')
-        else:
-            self.theme_action.setText('Cambiar a Tema &Oscuro')
+
     
     def _show_about_dialog(self) -> None:
         # show the About dialog created with Qt Designer
@@ -253,17 +234,7 @@ class MainWindow(QMainWindow):
         about_dialog.exec()
 
     def _apply_styling(self) -> None:
-        # styling for the looks
-        if self._is_dark_theme:
-            self._apply_dark_theme()
-        else:
-            self._apply_light_theme()
-        
-        self.setMinimumSize(800, 500)
-        self.setWindowState(Qt.WindowState.WindowActive)
-    
-    def _apply_dark_theme(self) -> None:
-        # apply dark theme styling
+        # apply theme styling
         self.setStyleSheet(
             """
             QMainWindow {
@@ -308,71 +279,11 @@ class MainWindow(QMainWindow):
             }
             """
         )
-        # apply dark theme to client list view
-        if hasattr(self._client_list_view, '_apply_dark_theme'):
-            self._client_list_view._apply_dark_theme()
+        
+        self.setMinimumSize(800, 500)
+        self.setWindowState(Qt.WindowState.WindowActive)
     
-    def _apply_light_theme(self) -> None:
-        # apply beautiful light theme styling
-        self.setStyleSheet(
-            """
-            QMainWindow {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #F1F5F9, stop:1 #E2E8F0);
-            }
-            QMenuBar {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #F8FAFC);
-                color: #1E293B;
-                border-bottom: 2px solid #CBD5E1;
-                padding: 6px;
-            }
-            QMenuBar::item {
-                background-color: transparent;
-                padding: 8px 14px;
-                border-radius: 6px;
-                margin: 2px;
-            }
-            QMenuBar::item:selected {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #EFF6FF, stop:1 #DBEAFE);
-                color: #1E40AF;
-            }
-            QMenu {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #F8FAFC);
-                color: #1E293B;
-                border: 2px solid #CBD5E1;
-                border-radius: 8px;
-                padding: 6px;
-            }
-            QMenu::item {
-                padding: 10px 18px;
-                border-radius: 6px;
-                margin: 1px;
-            }
-            QMenu::item:selected {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #EFF6FF, stop:1 #DBEAFE);
-                color: #1E40AF;
-            }
-            QWidget#centralContainer {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #F8FAFC);
-                border: 2px solid #CBD5E1;
-                border-radius: 8px;
-            }
-            QWidget#clientListView {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #F8FAFC, stop:1 #F1F5F9);
-                border-radius: 12px;
-                border: 2px solid #94A3B8;
-            }
-            """
-        )
-        # apply light theme to client list view
-        if hasattr(self._client_list_view, '_apply_light_theme'):
-            self._client_list_view._apply_light_theme()
+
 
     def _connect_controller_signals(self) -> None:
         # connect controller signals to UI updates

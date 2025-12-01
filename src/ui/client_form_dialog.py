@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QDialog
 from ui.client_form_view import ClientFormView
 
 
+
 class ClientFormDialog(QDialog):
     # dialog wrapper for the client form
 
@@ -31,7 +32,11 @@ class ClientFormDialog(QDialog):
         
         # set the form as the dialogs main widget
         self.setLayout(self.form_view.layout())        
-        # apply elegant blue-gray styling
+        # apply theming
+        self._apply_styling()
+    
+    def _apply_styling(self) -> None:
+        # apply professional theme styling
         self.setStyleSheet("""
             QDialog {
                 background-color: #0F172A;
@@ -81,6 +86,8 @@ class ClientFormDialog(QDialog):
                 border-color: #3B82F6;
             }
         """)
+    
+
 
     def _populate_form(self, client_data) -> None:
         # populate form fields with existing client data

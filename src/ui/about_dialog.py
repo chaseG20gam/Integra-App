@@ -6,6 +6,7 @@ from PyQt6.QtGui import QDesktopServices, QPixmap
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
 
 
+
 class AboutDialog(QDialog):
     # about dialog
 
@@ -102,6 +103,19 @@ class AboutDialog(QDialog):
         # fallback: create a simple placeholder with initials
         self.iconLabel.setText("CG")
         self._apply_icon_fallback_style()
+    
+    def _apply_icon_fallback_style(self) -> None:
+        # apply fallback styling for icon when no image is found
+        self.iconLabel.setStyleSheet("""
+            QLabel#iconLabel {
+                background-color: #3B82F6;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                border-radius: 8px;
+                border: 2px solid #1E40AF;
+            }
+        """)
 
     def _open_developer_page(self) -> None:
         # open developer page in default browser
@@ -109,15 +123,7 @@ class AboutDialog(QDialog):
         QDesktopServices.openUrl(QUrl(url))
 
     def _apply_styling(self) -> None:
-        # get theme from main window
-        main_window = self.parent()
-        if hasattr(main_window, '_is_dark_theme') and not main_window._is_dark_theme:
-            self._apply_light_theme()
-        else:
-            self._apply_dark_theme()
-    
-    def _apply_dark_theme(self) -> None:
-        # apply dark theme
+        # apply theme styling
         self.setStyleSheet("""
             QDialog {
                 background-color: #0F172A;
@@ -173,90 +179,3 @@ class AboutDialog(QDialog):
             }
         """)
     
-    def _apply_light_theme(self) -> None:
-        # apply light theme 
-        self.setStyleSheet("""
-            QDialog {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #F8FAFC, stop:1 #E2E8F0);
-                color: #1F2937;
-            }
-            QLabel {
-                color: #374151;
-                font-size: 14px;
-                padding: 10px;
-            }
-            QLabel#titleLabel {
-                font-size: 18px;
-                font-weight: bold;
-                color: #1E40AF;
-                padding: 20px;
-            }
-            QLabel#descriptionLabel {
-                color: #4B5563;
-                line-height: 1.5;
-            }
-            QLabel#linkLabel {
-                color: #2563EB;
-                font-size: 13px;
-                padding: 5px;
-            }
-            QLabel#linkLabel a {
-                color: #2563EB;
-                text-decoration: none;
-            }
-            QLabel#linkLabel a:hover {
-                color: #1D4ED8;
-                text-decoration: underline;
-            }
-            QLabel#iconLabel {
-                background-color: #F3F4F6;
-                border: 2px solid #D1D5DB;
-                border-radius: 8px;
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #EFF6FF, stop:1 #DBEAFE);
-                border: 1px solid #93C5FD;
-                border-radius: 6px;
-                padding: 10px 20px;
-                color: #1E40AF;
-                font-weight: bold;
-                margin: 10px 50px;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #DBEAFE, stop:1 #BFDBFE);
-            }
-            QPushButton:pressed {
-                background: #BFDBFE;
-            }
-        """)
-    
-    def _apply_icon_fallback_style(self) -> None:
-        main_window = self.parent()
-        if hasattr(main_window, '_is_dark_theme') and not main_window._is_dark_theme:
-            # light theme fallback
-            self.iconLabel.setStyleSheet("""
-                QLabel#iconLabel {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                        stop:0 #3B82F6, stop:1 #1E40AF);
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                    border-radius: 8px;
-                    border: 2px solid #1E40AF;
-                }
-            """)
-        else:
-            # dark theme fallback
-            self.iconLabel.setStyleSheet("""
-                QLabel#iconLabel {
-                    background-color: #3B82F6;
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                    border-radius: 8px;
-                    border: 2px solid #1E40AF;
-                }
-            """)

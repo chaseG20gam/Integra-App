@@ -279,11 +279,7 @@ class ClientListView(QWidget):
         self.start_pulse_animation()
     
     def _apply_styling(self) -> None:
-        # default to dark theme
-        self._apply_dark_theme()
-    
-    def _apply_dark_theme(self) -> None:
-        # apply dark theme styling
+        # apply professional theme styling
         self.setStyleSheet("""
             QWidget {
                 color: #E2E8F0;
@@ -334,72 +330,6 @@ class ClientListView(QWidget):
             }
             QPushButton:pressed {
                 background-color: #1E293B;
-            }
-        """)
-    
-    def _apply_light_theme(self) -> None:
-        # apply beautiful light theme styling
-        self.setStyleSheet("""
-            QWidget {
-                color: #1E293B;
-            }
-            QLabel {
-                color: #1E293B;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QLineEdit {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #F8FAFC);
-                border: 2px solid #CBD5E1;
-                border-radius: 8px;
-                padding: 10px;
-                color: #1E293B;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border-color: #3B82F6;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #EFF6FF);
-            }
-            QListWidget {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #FFFFFF, stop:1 #F8FAFC);
-                border: 2px solid #CBD5E1;
-                border-radius: 10px;
-                color: #1E293B;
-                alternate-background-color: #F1F5F9;
-            }
-            QListWidget::item {
-                padding: 14px;
-                border-bottom: 1px solid #E2E8F0;
-                margin: 1px;
-                border-radius: 4px;
-            }
-            QListWidget::item:selected {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #DBEAFE, stop:1 #BFDBFE);
-                color: #1E40AF;
-            }
-            QListWidget::item:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #F1F5F9, stop:1 #E2E8F0);
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #EFF6FF, stop:1 #DBEAFE);
-                border: 2px solid #93C5FD;
-                border-radius: 8px;
-                padding: 12px 18px;
-                color: #1E40AF;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #DBEAFE, stop:1 #BFDBFE);
-            }
-            QPushButton:pressed {
-                background: #BFDBFE;
             }
         """)
 

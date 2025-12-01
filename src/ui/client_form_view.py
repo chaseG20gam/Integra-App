@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 )
 
 
+
 class ClientFormView(QWidget):
     # form for entering or editing client details
 
@@ -104,6 +105,7 @@ class ClientFormView(QWidget):
             self.sports_none_checkbox.setChecked(False)
     
     def _apply_styling(self) -> None:
+        # apply professional theme styling
         self.setStyleSheet("""
             QWidget {
                 background-color: transparent;
@@ -153,3 +155,5 @@ class ClientFormView(QWidget):
                 border-color: #3B82F6;
             }
         """)
+    
+
