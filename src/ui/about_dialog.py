@@ -81,9 +81,8 @@ class AboutDialog(QDialog):
         self.linkLabel.linkActivated.connect(self._open_developer_page)
     
     def _close_dialog(self) -> None:
-        # debug and close the dialog
-        print("Close button clicked!")  # Debug
-        self.done(0)  # Alternative to close/accept
+        # close the dialog
+        self.accept()
         
     def _load_developer_icon(self) -> None:
         # load ico
@@ -164,19 +163,25 @@ class AboutDialog(QDialog):
                 border-radius: 8px;
             }
             QPushButton {
-                background-color: #334155;
-                border: 1px solid #475569;
+                background-color: #3B82F6;
+                border: 1px solid #2563EB;
                 border-radius: 6px;
-                padding: 10px 20px;
-                color: #E2E8F0;
+                padding: 12px 24px;
+                color: white;
                 font-weight: bold;
-                margin: 10px 50px;
+                font-size: 14px;
+                min-width: 80px;
             }
             QPushButton:hover {
-                background-color: #475569;
+                background-color: #2563EB;
+                border-color: #1D4ED8;
             }
             QPushButton:pressed {
-                background-color: #1E293B;
+                background-color: #1D4ED8;
+            }
+            QPushButton:focus {
+                outline: 2px solid #60A5FA;
+                outline-offset: 2px;
             }
         """)
     
