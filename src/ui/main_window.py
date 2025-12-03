@@ -24,6 +24,9 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Integra Client Manager")
         self.resize(960, 600)
+        
+        # set window icon
+        self._set_window_icon()
 
         self._client_list_view = ClientListView(self)
         self._client_list_view.setObjectName("clientListView")
@@ -82,14 +85,6 @@ class MainWindow(QMainWindow):
         
         # help menu
         help_menu = menubar.addMenu('&Ayuda')
-        
-        # keyboard shortcuts action
-        shortcuts_action = QAction('&Atajos de Teclado', self)
-        shortcuts_action.setStatusTip('Ver lista de atajos de teclado disponibles')
-        shortcuts_action.triggered.connect(self._show_shortcuts)
-        help_menu.addAction(shortcuts_action)
-        
-        help_menu.addSeparator()
         
         # check for updates action
         update_check_action = QAction('&Buscar Actualizaciones', self)
@@ -212,39 +207,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo abrir la carpeta de datos:\n{str(e)}")
     
-    def _show_shortcuts(self) -> None:
-        # show keyboard shortcuts dialog
-        shortcuts_text = """
-        <h3>Atajos de Teclado Disponibles:</h3>
-        <table style="color: #E2E8F0;">
-        <tr><td><b>Ctrl + N</b></td><td>Nuevo cliente</td></tr>
-        <tr><td><b>Ctrl + F</b></td><td>Buscar cliente</td></tr>
-        <tr><td><b>Ctrl + R</b></td><td>Actualizar lista</td></tr>
-        <tr><td><b>Delete</b></td><td>Eliminar cliente seleccionado</td></tr>
-        <tr><td><b>Enter</b></td><td>Ver detalles del cliente</td></tr>
-        <tr><td><b>Ctrl + B</b></td><td>Respaldar base de datos</td></tr>
-        <tr><td><b>Ctrl + E</b></td><td>Exportar clientes</td></tr>
-        <tr><td><b>F1</b></td><td>Mostrar esta ayuda</td></tr>
-        </table>
-        <br>
-        <p><i>Tip: Haz doble clic en un cliente para ver sus detalles</i></p>
-        """
-        
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Atajos de Teclado")
-        msg.setText(shortcuts_text)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setStyleSheet("""
-            QMessageBox {
-                background-color: #0F172A;
-                color: #E2E8F0;
-            }
-            QMessageBox QLabel {
-                color: #E2E8F0;
-                font-size: 13px;
-            }
-        """)
-        msg.exec()
+
 
 
     
@@ -252,6 +215,23 @@ class MainWindow(QMainWindow):
         # show the About dialog created with Qt Designer
         about_dialog = AboutDialog(self)
         about_dialog.exec()
+    
+    def _set_window_icon(self) -> None:
+        # set the application window icon
+        import os
+        import sys
+        
+        # get the correct resource path for both development and bundled executable
+        if getattr(sys, 'frozen', False):
+            # running as bundled executable
+            base_path = sys._MEIPASS
+            icon_path = os.path.join(base_path, 'assets', 'app_icon.ico')
+        else:
+            # running as script in development
+            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'app_icon.ico')
+        
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
     
     def _setup_update_system(self) -> None:
         # connect update manager signals
