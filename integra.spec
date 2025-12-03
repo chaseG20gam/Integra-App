@@ -8,6 +8,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('src/assets/*', 'assets'),
+        ('src/utils/*.svg', 'utils'),
     ],
     hiddenimports=[
         'models',

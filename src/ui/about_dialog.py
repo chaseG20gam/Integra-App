@@ -86,7 +86,7 @@ class AboutDialog(QDialog):
         
     def _load_developer_icon(self) -> None:
         # load ico
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'developer_icon.png')
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'integra_icon.jpeg')
         
         if os.path.exists(icon_path):
             pixmap = QPixmap(icon_path)

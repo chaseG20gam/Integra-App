@@ -20,7 +20,7 @@ def main() -> None:
     
     # set application icon BEFORE setting app user model id
     ico_path = os.path.join(os.path.dirname(__file__), "assets", "app_icon.ico")
-    png_path = os.path.join(os.path.dirname(__file__), "assets", "developer_icon.png")
+    png_path = os.path.join(os.path.dirname(__file__), "assets", "integra_icon.jpeg")
     
     icon = None
     if os.path.exists(ico_path):

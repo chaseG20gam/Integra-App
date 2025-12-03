@@ -16,7 +16,7 @@ class SimpleUpdateDialog(QDialog):
         super().__init__(parent)
         self.update_info = update_info
         self.downloader = None
-        self.setWindowTitle("Update Available")
+        self.setWindowTitle("Actualizacion disponible")
         self.setModal(True)
         self.resize(450, 350)
         
@@ -30,13 +30,13 @@ class SimpleUpdateDialog(QDialog):
         layout.setSpacing(15)
         
         # header
-        header_label = QLabel("Update Available!")
+        header_label = QLabel("Actualizacion disponible!")
         header_label.setObjectName("headerLabel")
         header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(header_label)
         
         # version info
-        version_text = f"New version {self.update_info.version} is available\n(Current: {CURRENT_VERSION})"
+        version_text = f"Nueva version {self.update_info.version} disponible\n(Current: {CURRENT_VERSION})"
         version_label = QLabel(version_text)
         version_label.setObjectName("versionLabel")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -44,7 +44,7 @@ class SimpleUpdateDialog(QDialog):
         
         # release notes (if available)
         if self.update_info.release_notes:
-            notes_group = QGroupBox("What's New")
+            notes_group = QGroupBox("Novedades")
             notes_layout = QVBoxLayout(notes_group)
             
             self.notes_text = QTextEdit()
@@ -68,12 +68,12 @@ class SimpleUpdateDialog(QDialog):
         # buttons
         button_layout = QHBoxLayout()
         
-        self.update_button = QPushButton("Yes, Update Now")
+        self.update_button = QPushButton("Si, actualizar")
         self.update_button.setObjectName("updateButton")
         self.update_button.clicked.connect(self._start_update)
         button_layout.addWidget(self.update_button)
         
-        self.skip_button = QPushButton("No, Skip This Version")
+        self.skip_button = QPushButton("No, Omitir version")
         self.skip_button.clicked.connect(self._skip_version)
         button_layout.addWidget(self.skip_button)
         
@@ -88,25 +88,27 @@ class SimpleUpdateDialog(QDialog):
             self.downloader = main_window.update_manager.download_update(self.update_info)
             
             if self.downloader:
-                # connect progress signals
+                # connect all signals
                 self.downloader.download_progress.connect(self._on_download_progress)
-                self.downloader.download_completed.connect(self._on_download_completed)
+                self.downloader.extraction_started.connect(self._on_extraction_started)
+                self.downloader.installation_started.connect(self._on_installation_started)
+                self.downloader.update_completed.connect(self._on_update_completed)
                 self.downloader.download_failed.connect(self._on_download_failed)
                 
                 # update ui for download state
                 self.update_button.setEnabled(False)
-                self.update_button.setText("Downloading...")
+                self.update_button.setText("Actualizando...")
                 self.skip_button.setEnabled(False)
                 self.progress_bar.setVisible(True)
                 self.progress_label.setVisible(True)
-                self.progress_label.setText("Starting download...")
+                self.progress_label.setText("Descarga iniciada...")
                 
-                # start download
+                # start download and installation
                 self.downloader.start()
             else:
-                QMessageBox.warning(self, "Error", "Update already in progress.")
+                QMessageBox.warning(self, "Error", "La actualizacion ya esta en curso.")
         else:
-            QMessageBox.critical(self, "Error", "Update manager not available.")
+            QMessageBox.critical(self, "Error", "Actualizador no disponible.")
     
     def _on_download_progress(self, downloaded: int, total: int):
         # handle download progress updates
@@ -117,36 +119,48 @@ class SimpleUpdateDialog(QDialog):
             # format file sizes
             downloaded_mb = downloaded / (1024 * 1024)
             total_mb = total / (1024 * 1024)
-            self.progress_label.setText(f"Downloading: {downloaded_mb:.1f} / {total_mb:.1f} MB ({progress}%)")
+            self.progress_label.setText(f"Descargando: {downloaded_mb:.1f} / {total_mb:.1f} MB ({progress}%)")
     
-    def _on_download_completed(self, file_path: str):
-        self.progress_label.setText("Download completed! Installing...")
+    def _on_extraction_started(self):
+        # handle extraction phase
+        self.progress_bar.setRange(0, 0)  # indeterminate progress
+        self.progress_label.setText("Extrayendo archivos...")
+    
+    def _on_installation_started(self):
+        # handle installation phase
+        self.progress_label.setText("Instalando...")
+    
+    def _on_update_completed(self):
+        # handle successful update completion
+        self.progress_bar.setVisible(False)
+        self.progress_label.setText("Actualizacion completada!")
         
-        # show completion message
+        # show completion message with restart info
         QMessageBox.information(
             self,
-            "Update Downloaded",
-            "Update downloaded successfully!\n\n"
-            f"Update file saved to: {file_path}\n\n"
-            "Note: Automatic installation will be implemented in the next phase. "
-            "For now, please manually extract and replace the application files."
+            "Actualizacion completada",
+            "La actualizacion se ha completado satisfactoriamente!\n\n"
+            "La aplicacion se reiniciara.\n\n"
+            "Los datos se preservaran."
         )
         
-        self.accept()  # close dialog
+        # close the application so the update script can restart it
+        import sys
+        sys.exit(0)
     
     def _on_download_failed(self, error: str):
         # handle update errors
-        self.progress_label.setText("Download failed!")
+        self.progress_label.setText("Descarga sin exito!")
         self.update_button.setEnabled(True)
-        self.update_button.setText("Retry Download")
+        self.update_button.setText("Reintentar descarga")
         self.skip_button.setEnabled(True)
         self.progress_bar.setVisible(False)
         self.progress_label.setVisible(False)
         
         QMessageBox.critical(
             self,
-            "Download Failed",
-            f"Failed to download update:\n{error}"
+            "Descarga sin exito",
+            f"Fallo al descargar actualizacion:\n{error}"
         )
     
     def _skip_version(self):
@@ -158,9 +172,9 @@ class SimpleUpdateDialog(QDialog):
         
         QMessageBox.information(
             self,
-            "Version Skipped",
-            f"Version {self.update_info.version} will be skipped.\n"
-            "You won't be notified about this version again."
+            "Version omitida",
+            f"Version {self.update_info.version} se omitira.\n"
+            "No se volvera a mostrar esta version."
         )
         
         self.reject()  # close dialog

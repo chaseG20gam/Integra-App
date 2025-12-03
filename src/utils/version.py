@@ -17,7 +17,7 @@ class Version(NamedTuple):
         pattern = r'^(\d+)\.(\d+)\.(\d+)$'
         match = re.match(pattern, version_str.strip())
         if not match:
-            raise ValueError(f"Invalid version format: {version_str}")
+            raise ValueError(f"Formato de version invalido: {version_str}")
         
         return cls(
             major=int(match.group(1)),
@@ -38,7 +38,7 @@ class Version(NamedTuple):
 
 
 # current application version
-CURRENT_VERSION = Version(1, 0, 1)
+CURRENT_VERSION = Version(1, 0, 2)
 
 # update configuration
 UPDATE_CONFIG = {

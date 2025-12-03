@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import shutil
 import tempfile
+import zipfile
+import subprocess
 from typing import Optional
 import urllib.request
 import urllib.error
@@ -61,7 +65,7 @@ class SimpleUpdateChecker(QThread):
                     )
                     self.update_available.emit(update_info)
                 else:
-                    self.check_failed.emit("No compatible download found for your platform")
+                    self.check_failed.emit("No hay descargas compatibles en esta plataforma")
             else:
                 self.no_update.emit()
                 
@@ -72,13 +76,13 @@ class SimpleUpdateChecker(QThread):
             else:
                 self.check_failed.emit(f"HTTP error {e.code}: {str(e)}")
         except urllib.error.URLError as e:
-            self.check_failed.emit(f"Network error: {str(e)}")
+            self.check_failed.emit(f"Error de red: {str(e)}")
         except json.JSONDecodeError:
-            self.check_failed.emit("Invalid response from update server")
+            self.check_failed.emit("No hay respuesta del servidor")
         except ValueError as e:
-            self.check_failed.emit(f"Version parsing error: {str(e)}")
+            self.check_failed.emit(f"Error: {str(e)}")
         except Exception as e:
-            self.check_failed.emit(f"Unexpected error: {str(e)}")
+            self.check_failed.emit(f"Error inesperado: {str(e)}")
     
     def _find_download_url(self, assets: list) -> Optional[str]:
         # find appropriate download url for current platform
@@ -98,10 +102,12 @@ class SimpleUpdateChecker(QThread):
 
 
 class UpdateDownloader(QThread):
-    # simple background thread for downloading updates
+    # simple background thread for downloading and installing updates
     
     download_progress = pyqtSignal(int, int)  # bytes_downloaded, total_bytes
-    download_completed = pyqtSignal(str)  # file_path
+    extraction_started = pyqtSignal()  # extraction phase
+    installation_started = pyqtSignal()  # installation phase
+    update_completed = pyqtSignal()  # update installed
     download_failed = pyqtSignal(str)  # error message
     
     def __init__(self, update_info: UpdateInfo, parent=None):
@@ -110,14 +116,14 @@ class UpdateDownloader(QThread):
         self.download_path = None
     
     def run(self):
-        # download update file in background
+        # download and install update file in background
         try:
-            # create temporary download path
+            # step 1. download
             temp_dir = tempfile.mkdtemp(prefix="integra_update_")
             filename = f"integra_update_{self.update_info.version}.zip"
             self.download_path = os.path.join(temp_dir, filename)
             
-            # real download with progress tracking
+            # download with progress tracking
             def progress_hook(block_num, block_size, total_size):
                 downloaded = min(block_num * block_size, total_size)
                 self.download_progress.emit(downloaded, total_size)
@@ -128,10 +134,99 @@ class UpdateDownloader(QThread):
                 progress_hook
             )
             
-            self.download_completed.emit(self.download_path)
+            # step 2. extract
+            self.extraction_started.emit()
+            extract_dir = os.path.join(temp_dir, "extracted")
+            os.makedirs(extract_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(self.download_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+            
+            # step 3. install
+            self.installation_started.emit()
+            self._install_update(extract_dir)
+            
+            self.update_completed.emit()
                 
         except Exception as e:
             self.download_failed.emit(str(e))
+    
+    def _install_update(self, extract_dir):
+        # install the update by replacing the current executable
+        try:
+            # find the new executable in the extracted files
+            new_exe_path = None
+            for root, dirs, files in os.walk(extract_dir):
+                for file in files:
+                    if file.endswith('.exe') and 'integra' in file.lower():
+                        new_exe_path = os.path.join(root, file)
+                        break
+                if new_exe_path:
+                    break
+            
+            if not new_exe_path:
+                raise Exception("No se ha encontrado el ejecutable")
+            
+            # get current executable path
+            if getattr(sys, 'frozen', False):
+                # running as PyInstaller executable
+                current_exe = sys.executable
+            else:
+                # running in development (not in prod)
+                raise Exception("No se puede actualizar desde desarrollo")
+            
+            # create backup of current executable
+            backup_path = current_exe + ".backup"
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+            shutil.copy2(current_exe, backup_path)
+            
+            # create a batch script to replace the executable and restart
+            batch_script = self._create_update_script(current_exe, new_exe_path, backup_path)
+            
+            # execute the batch script and exit current application
+            subprocess.Popen([batch_script], shell=True)
+            
+        except Exception as e:
+            raise Exception(f"Instalacion fallida: {str(e)}")
+    
+    def _create_update_script(self, current_exe, new_exe_path, backup_path):
+        # create a batch script to handle the file replacement and restart
+        script_dir = os.path.dirname(current_exe)
+        script_path = os.path.join(script_dir, "update_integra.bat")
+        
+        script_content = f'''
+        @echo off
+        echo Updating Integra Client Manager...
+        timeout /t 2 /nobreak > nul
+
+        :: Replace the executable
+        copy /y "{new_exe_path}" "{current_exe}"
+
+        if errorlevel 1 (
+            echo Update failed, restoring backup...
+            copy /y "{backup_path}" "{current_exe}"
+            echo Update failed. Press any key to exit.
+            pause > nul
+            exit /b 1
+        )
+
+        :: Clean up
+        del "{backup_path}" 2>nul
+
+        :: Restart the application
+        echo Update completed successfully! Restarting...
+        timeout /t 2 /nobreak > nul
+        start "" "{current_exe}"
+
+        :: Clean up this script
+        del "%~f0"
+        '''
+        
+        with open(script_path, 'w', encoding='utf-8') as f:
+            f.write(script_content)
+        
+        return script_path
 
 
 class SimpleUpdateManager(QObject):

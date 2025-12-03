@@ -50,7 +50,17 @@ class ClientListView(QWidget):
         self.delete_button = QPushButton("Eliminar", self)
         # create refresh button with SVG icon
         import os
-        refresh_icon_path = os.path.join(os.path.dirname(__file__), '..', 'utils', 'refresh-svgrepo-com.svg')
+        import sys
+        
+        # get the correct resource path for both development and bundled executable
+        if getattr(sys, 'frozen', False):
+            # running as bundled executable
+            base_path = sys._MEIPASS
+            refresh_icon_path = os.path.join(base_path, 'utils', 'refresh-svgrepo-com.svg')
+        else:
+            # running as script in development
+            refresh_icon_path = os.path.join(os.path.dirname(__file__), '..', 'utils', 'refresh-svgrepo-com.svg')
+        
         self.refresh_button = QPushButton(self)
         self.refresh_button.setIcon(QIcon(refresh_icon_path))
         self.refresh_button.setToolTip("Actualizar lista de clientes")
