@@ -464,6 +464,27 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.warning(self, "Datos invalidos", "Nombre y apellidos es un campo obligatorio")
 
+    def _show_edit_client_dialog(self, client_data: dict) -> None:
+        # show the edit client form dialog
+        dialog = ClientFormDialog(self, client_data)
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            if dialog.is_valid():
+                updated_data = dialog.get_form_data()
+                self._client_controller.update_client(
+                    client_data['id'],  # use the original ID
+                    updated_data["first_name"],
+                    updated_data["last_name"],
+                    updated_data["phone"],
+                    updated_data["email"],
+                    updated_data["occupation"],
+                    updated_data["therapy_price"],
+                    updated_data["sports"],
+                    updated_data["background"],
+                    updated_data["observations"]
+                )
+            else:
+                QMessageBox.warning(self, "Datos invalidos", "Nombre y apellidos es un campo obligatorio")
+
     @property
     def client_list_view(self) -> ClientListView:
         # expose the client list view for controller wiring

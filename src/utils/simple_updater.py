@@ -184,8 +184,14 @@ class UpdateDownloader(QThread):
             # create a batch script to replace the executable and restart
             batch_script = self._create_update_script(current_exe, new_exe_path, backup_path)
             
-            # execute the batch script and exit current application
-            subprocess.Popen([batch_script], shell=True)
+            # execute the batch script in a detached process
+            # this ensures it runs independently after the app closes
+            subprocess.Popen(['cmd.exe', '/c', batch_script], 
+                           shell=False, 
+                           stdin=None, 
+                           stdout=None, 
+                           stderr=None, 
+                           close_fds=True)
             
         except Exception as e:
             raise Exception(f"Instalacion fallida: {str(e)}")
@@ -195,32 +201,37 @@ class UpdateDownloader(QThread):
         script_dir = os.path.dirname(current_exe)
         script_path = os.path.join(script_dir, "update_integra.bat")
         
-        script_content = f'''
-        @echo off
+        script_content = f'''@echo off
         echo Updating Integra Client Manager...
-        timeout /t 2 /nobreak > nul
+        cd /d "{script_dir}"
+
+        :: Wait for application to fully close
+        timeout /t 3 /nobreak > nul
 
         :: Replace the executable
+        echo Copying new executable...
         copy /y "{new_exe_path}" "{current_exe}"
 
         if errorlevel 1 (
             echo Update failed, restoring backup...
             copy /y "{backup_path}" "{current_exe}"
-            echo Update failed. Press any key to exit.
-            pause > nul
+            echo Update failed. Application will not restart.
+            timeout /t 5 /nobreak > nul
             exit /b 1
         )
 
-        :: Clean up
-        del "{backup_path}" 2>nul
+        :: Clean up backup
+        if exist "{backup_path}" del "{backup_path}"
 
         :: Restart the application
-        echo Update completed successfully! Restarting...
-        timeout /t 2 /nobreak > nul
+        echo Update completed successfully! Starting application...
+        timeout /t 1 /nobreak > nul
         start "" "{current_exe}"
 
-        :: Clean up this script
-        del "%~f0"
+        :: Wait a bit and clean up this script
+        timeout /t 2 /nobreak > nul
+        del "%~f0" 2>nul
+        exit /b 0
         '''
         
         with open(script_path, 'w', encoding='utf-8') as f:

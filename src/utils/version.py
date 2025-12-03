@@ -38,7 +38,7 @@ class Version(NamedTuple):
 
 
 # current application version
-CURRENT_VERSION = Version(1, 0, 3)
+CURRENT_VERSION = Version(1, 0, 5)
 
 # update configuration
 UPDATE_CONFIG = {

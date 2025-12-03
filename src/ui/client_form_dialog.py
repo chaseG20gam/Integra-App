@@ -91,23 +91,33 @@ class ClientFormDialog(QDialog):
 
     def _populate_form(self, client_data) -> None:
         # populate form fields with existing client data
-        self.form_view.first_name_input.setText(client_data.first_name)
-        self.form_view.last_name_input.setText(client_data.last_name)
-        self.form_view.phone_input.setText(client_data.phone or "")
-        self.form_view.email_input.setText(client_data.email or "")
-        self.form_view.occupation_input.setText(client_data.occupation or "")
-        self.form_view.therapy_price_input.setValue(float(client_data.therapy_price or 0))
+        # handle both object attributes and dictionary keys
+        def get_value(data, key):
+            if isinstance(data, dict):
+                return data.get(key)
+            else:
+                return getattr(data, key, None)
+        
+        self.form_view.first_name_input.setText(get_value(client_data, 'first_name') or "")
+        self.form_view.last_name_input.setText(get_value(client_data, 'last_name') or "")
+        self.form_view.phone_input.setText(get_value(client_data, 'phone') or "")
+        self.form_view.email_input.setText(get_value(client_data, 'email') or "")
+        self.form_view.occupation_input.setText(get_value(client_data, 'occupation') or "")
+        
+        therapy_price = get_value(client_data, 'therapy_price')
+        self.form_view.therapy_price_input.setValue(float(therapy_price or 0))
         
         # handle sports field and checkbox
-        if client_data.sports:
-            self.form_view.sports_input.setText(client_data.sports)
+        sports = get_value(client_data, 'sports')
+        if sports:
+            self.form_view.sports_input.setText(sports)
             self.form_view.sports_none_checkbox.setChecked(False)
         else:
             self.form_view.sports_input.setText("")
             self.form_view.sports_none_checkbox.setChecked(True)
             
-        self.form_view.background_input.setPlainText(client_data.background or "")
-        self.form_view.observations_input.setPlainText(client_data.observations or "")
+        self.form_view.background_input.setPlainText(get_value(client_data, 'background') or "")
+        self.form_view.observations_input.setPlainText(get_value(client_data, 'observations') or "")
 
     def get_form_data(self) -> dict:
         # extract form data as a dictionary

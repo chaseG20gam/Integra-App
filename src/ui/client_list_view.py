@@ -134,6 +134,7 @@ class ClientListView(QWidget):
 
     def _connect_signals(self) -> None:
         # connect button signals to their handlers
+        self.edit_button.clicked.connect(self._edit_selected_client)
         self.delete_button.clicked.connect(self._confirm_delete)
         self.refresh_button.clicked.connect(self._on_refresh_clicked)
         self.client_list.itemDoubleClicked.connect(self._on_client_double_clicked)
@@ -145,17 +146,25 @@ class ClientListView(QWidget):
         # show confirmation dialog before deleting selected client
         current_item = self.client_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Nada seleccionado", "Porfavor, selecciona un cliente para eliminar")
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Nada seleccionado")
+            msg.setText("Por favor, selecciona un cliente para eliminar")
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
             return
 
         client_name = current_item.text()
-        reply = QMessageBox.question(
-            self,
-            "Confirmar eliminacion",
-            f"Seguro que quieres eliminar a '{client_name}'?\n\nEsta accion es definitiva y no se puede deshacer",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Confirmar eliminacion")
+        msg.setText(f"Seguro que quieres eliminar a '{client_name}'?\n\nEsta accion es definitiva y no se puede deshacer")
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+        
+        msg.setStyleSheet(self._get_message_box_style())
+        
+        reply = msg.exec()
 
         if reply == QMessageBox.StandardButton.Yes:
             # get controller from main window and delete through it
@@ -164,9 +173,60 @@ class ClientListView(QWidget):
             if controller and client_name in self.client_data_map:
                 client_data = self.client_data_map[client_name]
                 controller.delete_client(client_data.id)
-                QMessageBox.information(self, "Eliminado", f"Cliente '{client_name}' eliminado con exito.")
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Eliminado")
+                msg.setText(f"Cliente '{client_name}' eliminado con exito.")
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setStyleSheet(self._get_message_box_style())
+                msg.exec()
             else:
-                QMessageBox.critical(self, "Error", "No se pudo eliminar el cliente: controlador no disponible.")
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Error")
+                msg.setText("No se pudo eliminar el cliente: controlador no disponible.")
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.setStyleSheet(self._get_message_box_style())
+                msg.exec()
+
+    def _edit_selected_client(self) -> None:
+        # edit the selected client
+        current_item = self.client_list.currentItem()
+        if not current_item:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Nada seleccionado")
+            msg.setText("Por favor, selecciona un cliente para editar")
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
+            return
+
+        client_name = current_item.text()
+        if client_name in self.client_data_map:
+            client_data = self.client_data_map[client_name]
+            # create client data dictionary for the form dialog
+            client_form_data = {
+                'id': client_data.id,
+                'first_name': client_data.first_name,
+                'last_name': client_data.last_name,
+                'phone': client_data.phone,
+                'email': client_data.email,
+                'occupation': client_data.occupation,
+                'therapy_price': client_data.therapy_price,
+                'sports': client_data.sports,
+                'background': client_data.background,
+                'observations': client_data.observations
+            }
+            
+            # get main window and call edit method directly
+            main_window = self.window()
+            if hasattr(main_window, '_show_edit_client_dialog'):
+                main_window._show_edit_client_dialog(client_form_data)
+        else:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Error")
+            msg.setText("No se pudo encontrar los datos del cliente.")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
 
     def _on_client_double_clicked(self, item: QListWidgetItem) -> None:
         # handle double-click on client item
@@ -200,7 +260,12 @@ class ClientListView(QWidget):
         if controller:
             controller.load_all_clients()
         else:
-            QMessageBox.warning(self, "Error", "No se pudo actualizar la lista: controlador no disponible.")
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Error")
+            msg.setText("No se pudo actualizar la lista: controlador no disponible.")
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
     
     def _on_refresh_clicked(self) -> None:
         # handle refresh button click and stop animation
@@ -270,8 +335,7 @@ class ClientListView(QWidget):
         # start animation
         self._pulse_animation.start()
         
-        # auto-stop after 10 seconds if user doesn't click
-        self._pulse_timer.start(10000)
+        # let it glow until clicked
     
     def _stop_pulse_animation(self) -> None:
         # stop pulsing animation and return to normal state
@@ -287,6 +351,34 @@ class ClientListView(QWidget):
     def highlight_refresh_needed(self) -> None:
         # public method to trigger pulse animation (called after deletion)
         self.start_pulse_animation()
+    
+    def _get_message_box_style(self) -> str:
+        # return consistent dark theme styling for message boxes
+        return """
+            QMessageBox {
+                background-color: #0F172A;
+                color: #E2E8F0;
+            }
+            QMessageBox QLabel {
+                color: #E2E8F0;
+                font-size: 14px;
+            }
+            QMessageBox QPushButton {
+                background-color: #334155;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: #E2E8F0;
+                font-weight: bold;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #475569;
+            }
+            QMessageBox QPushButton:pressed {
+                background-color: #1E293B;
+            }
+        """
     
     def _apply_styling(self) -> None:
         # apply theme styling
