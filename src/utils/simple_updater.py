@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import zipfile
 import subprocess
+import platform
 from typing import Optional
 import urllib.request
 import urllib.error
@@ -154,13 +155,22 @@ class UpdateDownloader(QThread):
     def _install_update(self, extract_dir):
         # install the update by replacing the current executable
         try:
-            # find the new executable in the extracted files
+            # find the new executable in the extracted files (cross-platform)
             new_exe_path = None
+            is_windows = platform.system() == 'Windows'
+            is_mac = platform.system() == 'Darwin'
+            
             for root, dirs, files in os.walk(extract_dir):
                 for file in files:
-                    if file.endswith('.exe') and 'integra' in file.lower():
-                        new_exe_path = os.path.join(root, file)
-                        break
+                    file_lower = file.lower()
+                    if 'integra' in file_lower:
+                        if is_windows and file.endswith('.exe'):
+                            new_exe_path = os.path.join(root, file)
+                            break
+                        elif is_mac and (file.endswith('.app') or '.' not in file):
+                            # Mac app bundle or executable without extension
+                            new_exe_path = os.path.join(root, file)
+                            break
                 if new_exe_path:
                     break
             
@@ -181,57 +191,127 @@ class UpdateDownloader(QThread):
                 os.remove(backup_path)
             shutil.copy2(current_exe, backup_path)
             
-            # create a batch script to replace the executable and restart
-            batch_script = self._create_update_script(current_exe, new_exe_path, backup_path)
-            
-            # execute the batch script in a detached process
-            # this ensures it runs independently after the app closes
-            subprocess.Popen(['cmd.exe', '/c', batch_script], 
-                           shell=False, 
-                           stdin=None, 
-                           stdout=None, 
-                           stderr=None, 
-                           close_fds=True)
+            # create appropriate script for the platform
+            if platform.system() == "Windows":
+                script_path = self._create_windows_update_script(current_exe, new_exe_path, backup_path)
+                # execute the batch script using os.system for better compatibility
+                import os
+                os.system(f'start /min "" "{script_path}"')
+            else:
+                # Mac/Linux - use shell script
+                script_path = self._create_unix_update_script(current_exe, new_exe_path, backup_path)
+                import os
+                os.system(f'chmod +x "{script_path}" && nohup "{script_path}" > /dev/null 2>&1 &')
             
         except Exception as e:
             raise Exception(f"Instalacion fallida: {str(e)}")
     
-    def _create_update_script(self, current_exe, new_exe_path, backup_path):
+    def _create_windows_update_script(self, current_exe, new_exe_path, backup_path):
         # create a batch script to handle the file replacement and restart
         script_dir = os.path.dirname(current_exe)
         script_path = os.path.join(script_dir, "update_integra.bat")
         
+        # use forward slashes converted to backslashes for Windows paths
+        current_exe_win = current_exe.replace('/', '\\')
+        new_exe_win = new_exe_path.replace('/', '\\')
+        backup_path_win = backup_path.replace('/', '\\')
+        script_dir_win = script_dir.replace('/', '\\')
+        
         script_content = f'''@echo off
+        title Integra Update
         echo Updating Integra Client Manager...
-        cd /d "{script_dir}"
+
+        :: Change to application directory
+        cd /d "{script_dir_win}"
 
         :: Wait for application to fully close
-        timeout /t 3 /nobreak > nul
+        echo Waiting for application to close...
+        timeout /t 5 /nobreak > nul
 
-        :: Replace the executable
-        echo Copying new executable...
-        copy /y "{new_exe_path}" "{current_exe}"
+        :: Try to replace the executable multiple times if needed
+        :RETRY
+        echo Attempting to update executable...
+        copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
 
         if errorlevel 1 (
+            echo Retrying in 2 seconds...
+            timeout /t 2 /nobreak > nul
+            goto RETRY
+        )
+
+        :: Verify the copy worked
+        if not exist "{current_exe_win}" (
             echo Update failed, restoring backup...
-            copy /y "{backup_path}" "{current_exe}"
-            echo Update failed. Application will not restart.
-            timeout /t 5 /nobreak > nul
+            copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
+            echo Update failed. Press any key to exit.
+            pause >nul
             exit /b 1
         )
 
-        :: Clean up backup
-        if exist "{backup_path}" del "{backup_path}"
+        :: Clean up backup and temp files
+        if exist "{backup_path_win}" del "{backup_path_win}" >nul 2>&1
 
         :: Restart the application
-        echo Update completed successfully! Starting application...
+        echo Update completed! Restarting application...
         timeout /t 1 /nobreak > nul
-        start "" "{current_exe}"
+        start "" "{current_exe_win}"
 
-        :: Wait a bit and clean up this script
+        :: Self-destruct this script
         timeout /t 2 /nobreak > nul
-        del "%~f0" 2>nul
+        del "%~f0" >nul 2>&1
         exit /b 0
+        '''
+        
+        with open(script_path, 'w') as f:
+            f.write(script_content)
+        
+        return script_path
+    
+    def _create_unix_update_script(self, current_exe, new_exe_path, backup_path):
+        # create a shell script to handle the file replacement and restart on Mac/Linux
+        script_dir = os.path.dirname(current_exe)
+        script_path = os.path.join(script_dir, "update_integra.sh")
+        
+        script_content = f'''#!/bin/bash
+        echo "Updating Integra Client Manager..."
+
+        # Change to application directory  
+        cd "{script_dir}"
+
+        # Wait for application to fully close
+        echo "Waiting for application to close..."
+        sleep 5
+
+        # Try to replace the executable multiple times if needed
+        for i in {{1..10}}; do
+            echo "Attempting to update executable (attempt $i)..."
+            if cp "{new_exe_path}" "{current_exe}"; then
+                break
+            fi
+            echo "Retrying in 2 seconds..."
+            sleep 2
+        done
+
+        # Verify the copy worked
+        if [ ! -f "{current_exe}" ]; then
+            echo "Update failed, restoring backup..."
+            cp "{backup_path}" "{current_exe}"
+            echo "Update failed."
+            exit 1
+        fi
+
+        # Clean up backup and temp files
+        rm -f "{backup_path}"
+
+        # Restart the application
+        echo "Update completed! Restarting application..."
+        sleep 1
+        open "{current_exe}" &
+
+        # Self-destruct this script
+        sleep 2
+        rm -f "$0"
+        exit 0
         '''
         
         with open(script_path, 'w', encoding='utf-8') as f:
