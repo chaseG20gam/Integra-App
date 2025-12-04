@@ -203,18 +203,20 @@ class UpdateDownloader(QThread):
         script_dir_win = script_dir.replace('/', '\\')
         
         script_content = f'''@echo off
-        title Integra Update
-        echo Updating Integra Client Manager...
+title Integra Update
+echo Updating Integra Client Manager...
 
-        cd /d "{script_dir_win}"
+cd /d "{script_dir_win}"
 
-        echo Waiting for application to close...
-        timeout /t 8 /nobreak > nul
+echo Waiting for application to close...
+timeout /t 10 /nobreak > nul
 
-        taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
-        timeout /t 2 /nobreak > nul
+taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
+timeout /t 3 /nobreak > nul
 
-        set RETRY_COUNT=0
+:: Wait for all DLLs and modules to be fully unloaded
+echo Waiting for modules to unload...
+timeout /t 5 /nobreak > nul        set RETRY_COUNT=0
         :RETRY
         set /a RETRY_COUNT+=1
         echo Attempting to update executable (attempt %RETRY_COUNT%)...
@@ -225,21 +227,19 @@ class UpdateDownloader(QThread):
 
         copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
 
-        if errorlevel 1 (
-            if %RETRY_COUNT% LSS 15 (
-                echo Retrying in 3 seconds...
-                timeout /t 3 /nobreak > nul
-                goto RETRY
-            ) else (
-                echo Maximum retries reached. Restoring backup...
-                copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
-                echo Update failed after 15 attempts.
-                pause
-                exit /b 1
-            )
-        )
-
-        if not exist "{current_exe_win}" (
+if errorlevel 1 (
+    if %RETRY_COUNT% LSS 20 (
+        echo Retrying in 5 seconds...
+        timeout /t 5 /nobreak > nul
+        goto RETRY
+    ) else (
+        echo Maximum retries reached. Restoring backup...
+        copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
+        echo Update failed after 20 attempts.
+        pause
+        exit /b 1
+    )
+)        if not exist "{current_exe_win}" (
             echo Update failed, restoring backup...
             copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
             echo Update failed. Press any key to exit.
@@ -250,10 +250,14 @@ class UpdateDownloader(QThread):
         if exist "{backup_path_win}" del /f "{backup_path_win}" >nul 2>&1
 
         echo Update completed successfully! Restarting application...
-        timeout /t 2 /nobreak > nul
-        start "" "{current_exe_win}"
-
         timeout /t 3 /nobreak > nul
+        
+        :: Start application and allow modules to load properly
+        echo Starting updated application...
+        start "" "{current_exe_win}"
+        
+        :: Wait longer before self-destruct to avoid DLL conflicts
+        timeout /t 5 /nobreak > nul
         del /f "%~f0" >nul 2>&1
         exit /b 0
         '''
