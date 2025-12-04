@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Integra Client Manager - Test placeholder")
+        self.setWindowTitle("Integra Client Manager")
         self.resize(960, 600)
         
         # set window icon

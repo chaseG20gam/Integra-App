@@ -184,13 +184,9 @@ class UpdateDownloader(QThread):
             # create a batch script to replace the executable and restart
             batch_script = self._create_update_script(current_exe, new_exe_path, backup_path)
             
-            # execute the batch script using subprocess for better process control
-            import subprocess
-            subprocess.Popen(
-                ['cmd', '/c', 'start', '/min', '', batch_script],
-                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
-                close_fds=True
-            )
+            # execute the batch script using os.system for better compatibility
+            # use START to run it in detached mode
+            os.system(f'start /min "" "{batch_script}"')
             
         except Exception as e:
             raise Exception(f"Instalacion fallida: {str(e)}")
@@ -210,29 +206,23 @@ class UpdateDownloader(QThread):
         title Integra Update
         echo Updating Integra Client Manager...
 
-        :: Change to application directory
         cd /d "{script_dir_win}"
 
-        :: Wait longer for application to fully close and release file handles
         echo Waiting for application to close...
         timeout /t 8 /nobreak > nul
 
-        :: Kill any remaining processes that might be holding the file
         taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
         timeout /t 2 /nobreak > nul
 
-        :: Try to replace the executable with more retries
         set RETRY_COUNT=0
         :RETRY
         set /a RETRY_COUNT+=1
         echo Attempting to update executable (attempt %RETRY_COUNT%)...
 
-        :: Try to delete the old executable first
         if exist "{current_exe_win}" (
             del /f "{current_exe_win}" >nul 2>&1
         )
 
-        :: Copy the new executable
         copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
 
         if errorlevel 1 (
@@ -249,7 +239,6 @@ class UpdateDownloader(QThread):
             )
         )
 
-        :: Verify the copy worked
         if not exist "{current_exe_win}" (
             echo Update failed, restoring backup...
             copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
@@ -258,15 +247,12 @@ class UpdateDownloader(QThread):
             exit /b 1
         )
 
-        :: Clean up backup and temp files
         if exist "{backup_path_win}" del /f "{backup_path_win}" >nul 2>&1
 
-        :: Restart the application
         echo Update completed successfully! Restarting application...
         timeout /t 2 /nobreak > nul
         start "" "{current_exe_win}"
 
-        :: Self-destruct this script after a delay
         timeout /t 3 /nobreak > nul
         del /f "%~f0" >nul 2>&1
         exit /b 0
