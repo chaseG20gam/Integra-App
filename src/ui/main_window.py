@@ -94,6 +94,14 @@ class MainWindow(QMainWindow):
         
         help_menu.addSeparator()
         
+        # test button action
+        test_action = QAction('&Test Update Feature', self)
+        test_action.setStatusTip('Test button for update functionality')
+        test_action.triggered.connect(self._show_test_dialog)
+        help_menu.addAction(test_action)
+        
+        help_menu.addSeparator()
+        
         # about action
         about_action = QAction('&Acerca de...', self)
         about_action.setStatusTip('Mostrar información sobre la aplicación')
@@ -215,6 +223,39 @@ class MainWindow(QMainWindow):
         # show the About dialog created with Qt Designer
         about_dialog = AboutDialog(self)
         about_dialog.exec()
+    
+    def _show_test_dialog(self) -> None:
+        # test dialog for update functionality verification
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Update Test")
+        msg.setText("🎉 This is a test!\n\nIf you can see this dialog, the auto-update functionality worked perfectly!\n\nThe app downloaded, extracted, replaced the executable, and restarted automatically.")
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #0F172A;
+                color: #E2E8F0;
+            }
+            QMessageBox QLabel {
+                color: #E2E8F0;
+                font-size: 14px;
+            }
+            QMessageBox QPushButton {
+                background-color: #334155;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 10px 16px;
+                color: #E2E8F0;
+                font-weight: bold;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #475569;
+            }
+            QMessageBox QPushButton:pressed {
+                background-color: #1E293B;
+            }
+        """)
+        msg.exec()
     
     def _set_window_icon(self) -> None:
         # set the application window icon
