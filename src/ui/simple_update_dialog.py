@@ -145,11 +145,19 @@ class SimpleUpdateDialog(QDialog):
         )
         
         # close the application so the update script can restart it
-        from PyQt6.QtCore import QTimer
+        from PyQt6.QtCore import QTimer, QCoreApplication
         import sys
         
-        # use a short delay to ensure the dialog is closed properly
-        QTimer.singleShot(1000, lambda: sys.exit(0))
+        # close the dialog first
+        self.accept()
+        
+        # ensure all file handles are closed and app shuts down cleanly
+        def shutdown_app():
+            QCoreApplication.instance().quit()
+            sys.exit(0)
+        
+        # use a short delay to ensure everything is closed properly
+        QTimer.singleShot(500, shutdown_app)
     
     def _on_download_failed(self, error: str):
         # handle update errors

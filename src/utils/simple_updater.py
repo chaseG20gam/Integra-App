@@ -184,10 +184,13 @@ class UpdateDownloader(QThread):
             # create a batch script to replace the executable and restart
             batch_script = self._create_update_script(current_exe, new_exe_path, backup_path)
             
-            # execute the batch script using os.system for better compatibility
-            # use START to run it in detached mode
-            import os
-            os.system(f'start /min "" "{batch_script}"')
+            # execute the batch script using subprocess for better process control
+            import subprocess
+            subprocess.Popen(
+                ['cmd', '/c', 'start', '/min', '', batch_script],
+                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                close_fds=True
+            )
             
         except Exception as e:
             raise Exception(f"Instalacion fallida: {str(e)}")
@@ -210,19 +213,40 @@ class UpdateDownloader(QThread):
         :: Change to application directory
         cd /d "{script_dir_win}"
 
-        :: Wait for application to fully close
+        :: Wait longer for application to fully close and release file handles
         echo Waiting for application to close...
-        timeout /t 5 /nobreak > nul
+        timeout /t 8 /nobreak > nul
 
-        :: Try to replace the executable multiple times if needed
+        :: Kill any remaining processes that might be holding the file
+        taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
+        timeout /t 2 /nobreak > nul
+
+        :: Try to replace the executable with more retries
+        set RETRY_COUNT=0
         :RETRY
-        echo Attempting to update executable...
+        set /a RETRY_COUNT+=1
+        echo Attempting to update executable (attempt %RETRY_COUNT%)...
+
+        :: Try to delete the old executable first
+        if exist "{current_exe_win}" (
+            del /f "{current_exe_win}" >nul 2>&1
+        )
+
+        :: Copy the new executable
         copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
 
         if errorlevel 1 (
-            echo Retrying in 2 seconds...
-            timeout /t 2 /nobreak > nul
-            goto RETRY
+            if %RETRY_COUNT% LSS 15 (
+                echo Retrying in 3 seconds...
+                timeout /t 3 /nobreak > nul
+                goto RETRY
+            ) else (
+                echo Maximum retries reached. Restoring backup...
+                copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
+                echo Update failed after 15 attempts.
+                pause
+                exit /b 1
+            )
         )
 
         :: Verify the copy worked
@@ -230,21 +254,21 @@ class UpdateDownloader(QThread):
             echo Update failed, restoring backup...
             copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
             echo Update failed. Press any key to exit.
-            pause >nul
+            pause
             exit /b 1
         )
 
         :: Clean up backup and temp files
-        if exist "{backup_path_win}" del "{backup_path_win}" >nul 2>&1
+        if exist "{backup_path_win}" del /f "{backup_path_win}" >nul 2>&1
 
         :: Restart the application
-        echo Update completed! Restarting application...
-        timeout /t 1 /nobreak > nul
+        echo Update completed successfully! Restarting application...
+        timeout /t 2 /nobreak > nul
         start "" "{current_exe_win}"
 
-        :: Self-destruct this script
-        timeout /t 2 /nobreak > nul
-        del "%~f0" >nul 2>&1
+        :: Self-destruct this script after a delay
+        timeout /t 3 /nobreak > nul
+        del /f "%~f0" >nul 2>&1
         exit /b 0
         '''
         
