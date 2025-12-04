@@ -1,3 +1,5 @@
 PyQt6>=6.6
 PyQt6-tools
 SQLAlchemy>=2.0
+pyinstaller
+Pillow
