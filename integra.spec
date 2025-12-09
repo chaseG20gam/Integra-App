@@ -69,8 +69,9 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Integra Client Manager.app',
-    icon='src/assets/app_icon.ico',
+    icon='src/assets/app_icon.icns',
     bundle_identifier='com.integra.clientmanager',
+    codesign_identity=None,
     info_plist={
         'NSPrincipalClass': 'NSApplication',
         'NSAppleScriptEnabled': False,

@@ -85,20 +85,35 @@ class AboutDialog(QDialog):
         self.accept()
         
     def _load_developer_icon(self) -> None:
-        # load ico
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'integra_icon.jpeg')
+        # load ico - handle both development and bundled app paths
+        import sys
         
-        if os.path.exists(icon_path):
-            pixmap = QPixmap(icon_path)
-            if not pixmap.isNull():
-                # scale the image to fit while maintaining aspect ratio
-                scaled_pixmap = pixmap.scaled(
-                    80, 80, 
-                    Qt.AspectRatioMode.KeepAspectRatio, 
-                    Qt.TransformationMode.SmoothTransformation
-                )
-                self.iconLabel.setPixmap(scaled_pixmap)
-                return
+        # try multiple possible paths
+        if getattr(sys, 'frozen', False):
+            # running pyinstaller bundle
+            base_path = sys._MEIPASS
+            icon_paths = [
+                os.path.join(base_path, 'assets', 'FSakuraIco.jpeg'),
+                os.path.join(base_path, 'FSakuraIco.jpeg')
+            ]
+        else:
+            # running in development
+            icon_paths = [
+                os.path.join(os.path.dirname(__file__), '..', 'assets', 'FSakuraIco.jpeg')
+            ]
+        
+        for icon_path in icon_paths:
+            if os.path.exists(icon_path):
+                pixmap = QPixmap(icon_path)
+                if not pixmap.isNull():
+                    # scale the image to fit while maintaining aspect ratio
+                    scaled_pixmap = pixmap.scaled(
+                        80, 80, 
+                        Qt.AspectRatioMode.KeepAspectRatio, 
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    self.iconLabel.setPixmap(scaled_pixmap)
+                    return
         
         # fallback: create a simple placeholder with initials
         self.iconLabel.setText("CG")
