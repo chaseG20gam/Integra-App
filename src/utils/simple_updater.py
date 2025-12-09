@@ -203,64 +203,64 @@ class UpdateDownloader(QThread):
         script_dir_win = script_dir.replace('/', '\\')
         
         script_content = f'''@echo off
-title Integra Update
-echo Updating Integra Client Manager...
+        title Integra Update
+        echo Updating Integra Client Manager...
 
-cd /d "{script_dir_win}"
+        cd /d "{script_dir_win}"
 
-echo Waiting for application to close...
-timeout /t 10 /nobreak > nul
+        echo Waiting for application to close...
+        timeout /t 10 /nobreak > nul
 
-taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
-timeout /t 3 /nobreak > nul
-
-:: Wait for all DLLs and modules to be fully unloaded
-echo Waiting for modules to unload...
-timeout /t 5 /nobreak > nul        set RETRY_COUNT=0
-        :RETRY
-        set /a RETRY_COUNT+=1
-        echo Attempting to update executable (attempt %RETRY_COUNT%)...
-
-        if exist "{current_exe_win}" (
-            del /f "{current_exe_win}" >nul 2>&1
-        )
-
-        copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
-
-if errorlevel 1 (
-    if %RETRY_COUNT% LSS 20 (
-        echo Retrying in 5 seconds...
-        timeout /t 5 /nobreak > nul
-        goto RETRY
-    ) else (
-        echo Maximum retries reached. Restoring backup...
-        copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
-        echo Update failed after 20 attempts.
-        pause
-        exit /b 1
-    )
-)        if not exist "{current_exe_win}" (
-            echo Update failed, restoring backup...
-            copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
-            echo Update failed. Press any key to exit.
-            pause
-            exit /b 1
-        )
-
-        if exist "{backup_path_win}" del /f "{backup_path_win}" >nul 2>&1
-
-        echo Update completed successfully! Restarting application...
+        taskkill /f /im "Integra Client Manager.exe" >nul 2>&1
         timeout /t 3 /nobreak > nul
-        
-        :: Start application and allow modules to load properly
-        echo Starting updated application...
-        start "" "{current_exe_win}"
-        
-        :: Wait longer before self-destruct to avoid DLL conflicts
-        timeout /t 5 /nobreak > nul
-        del /f "%~f0" >nul 2>&1
-        exit /b 0
-        '''
+
+        :: Wait for all DLLs and modules to be fully unloaded
+        echo Waiting for modules to unload...
+        timeout /t 5 /nobreak > nul        set RETRY_COUNT=0
+                :RETRY
+                set /a RETRY_COUNT+=1
+                echo Attempting to update executable (attempt %RETRY_COUNT%)...
+
+                if exist "{current_exe_win}" (
+                    del /f "{current_exe_win}" >nul 2>&1
+                )
+
+                copy /y "{new_exe_win}" "{current_exe_win}" >nul 2>&1
+
+        if errorlevel 1 (
+            if %RETRY_COUNT% LSS 20 (
+                echo Retrying in 5 seconds...
+                timeout /t 5 /nobreak > nul
+                goto RETRY
+            ) else (
+                echo Maximum retries reached. Restoring backup...
+                copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
+                echo Update failed after 20 attempts.
+                pause
+                exit /b 1
+            )
+        )        if not exist "{current_exe_win}" (
+                    echo Update failed, restoring backup...
+                    copy /y "{backup_path_win}" "{current_exe_win}" >nul 2>&1
+                    echo Update failed. Press any key to exit.
+                    pause
+                    exit /b 1
+                )
+
+                if exist "{backup_path_win}" del /f "{backup_path_win}" >nul 2>&1
+
+                echo Update completed successfully! Restarting application...
+                timeout /t 3 /nobreak > nul
+                
+                :: Start application and allow modules to load properly
+                echo Starting updated application...
+                start "" "{current_exe_win}"
+                
+                :: Wait longer before self-destruct to avoid DLL conflicts
+                timeout /t 5 /nobreak > nul
+                del /f "%~f0" >nul 2>&1
+                exit /b 0
+                '''
         
         with open(script_path, 'w') as f:
             f.write(script_content)

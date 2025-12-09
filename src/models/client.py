@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Optional
 
-from sqlalchemy import Integer, Numeric, String
+from sqlalchemy import Date, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import Base
@@ -18,6 +19,7 @@ class Client(Base):
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    birth_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     occupation: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     therapy_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
     sports: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)

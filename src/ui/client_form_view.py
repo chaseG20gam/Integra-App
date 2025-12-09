@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QDateEdit,
     QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
@@ -11,6 +12,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PyQt6.QtCore import QDate
 
 
 
@@ -24,6 +26,7 @@ class ClientFormView(QWidget):
         self.last_name_input = QLineEdit(self)
         self.phone_input = QLineEdit(self)
         self.email_input = QLineEdit(self)
+        self.birth_date_input = QDateEdit(self)
         self.occupation_input = QLineEdit(self)
         self.therapy_price_input = QDoubleSpinBox(self)
         self.sports_input = QLineEdit(self)
@@ -46,6 +49,11 @@ class ClientFormView(QWidget):
         self.last_name_input.setPlaceholderText("Apellidos")
         self.phone_input.setPlaceholderText("Telefono")
         self.email_input.setPlaceholderText("Correo electronico")
+        self.birth_date_input.setCalendarPopup(True)
+        self.birth_date_input.setDate(QDate.currentDate())
+        self.birth_date_input.setSpecialValueText("No especificado")
+        self.birth_date_input.setMinimumDate(QDate(1900, 1, 1))
+        self.birth_date_input.setMaximumDate(QDate.currentDate())
         self.occupation_input.setPlaceholderText("Profesion")
         self.therapy_price_input.setPrefix("€")
         self.therapy_price_input.setMaximum(9999.99)
@@ -61,6 +69,7 @@ class ClientFormView(QWidget):
         form_layout.addRow("Apellidos", self.last_name_input)
         form_layout.addRow("Telefono", self.phone_input)
         form_layout.addRow("Correo electronico", self.email_input)
+        form_layout.addRow("Fecha de nacimiento", self.birth_date_input)
         form_layout.addRow("Profesion", self.occupation_input)
         form_layout.addRow("Precio", self.therapy_price_input)
         
@@ -115,7 +124,7 @@ class ClientFormView(QWidget):
                 color: #E2E8F0;
                 font-weight: bold;
             }
-            QLineEdit, QDoubleSpinBox, QTextEdit {
+            QLineEdit, QDoubleSpinBox, QTextEdit, QDateEdit {
                 background-color: #1E293B;
                 border: 1px solid #334155;
                 border-radius: 6px;
@@ -123,8 +132,24 @@ class ClientFormView(QWidget):
                 color: #E2E8F0;
                 font-size: 13px;
             }
-            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus {
+            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus, QDateEdit:focus {
                 border-color: #3B82F6;
+            }
+            QDateEdit::drop-down {
+                background-color: #334155;
+                border-left: 1px solid #475569;
+                width: 20px;
+                border-radius: 0px 6px 6px 0px;
+            }
+            QDateEdit::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 4px solid #E2E8F0;
+            }
+            QCalendarWidget {
+                background-color: #1E293B;
+                color: #E2E8F0;
             }
             QPushButton {
                 background-color: #334155;

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QDialog
+from PyQt6.QtCore import QDate
 
 from ui.client_form_view import ClientFormView
 
@@ -102,6 +103,18 @@ class ClientFormDialog(QDialog):
         self.form_view.last_name_input.setText(get_value(client_data, 'last_name') or "")
         self.form_view.phone_input.setText(get_value(client_data, 'phone') or "")
         self.form_view.email_input.setText(get_value(client_data, 'email') or "")
+        
+        # handle birth date
+        birth_date = get_value(client_data, 'birth_date')
+        if birth_date:
+            if hasattr(birth_date, 'year'):  # datetime.date object
+                qdate = QDate(birth_date.year, birth_date.month, birth_date.day)
+            else:  # string format
+                qdate = QDate.fromString(str(birth_date), "yyyy-MM-dd")
+            self.form_view.birth_date_input.setDate(qdate if qdate.isValid() else QDate.currentDate())
+        else:
+            self.form_view.birth_date_input.clear()
+            
         self.form_view.occupation_input.setText(get_value(client_data, 'occupation') or "")
         
         therapy_price = get_value(client_data, 'therapy_price')
@@ -128,11 +141,19 @@ class ClientFormDialog(QDialog):
         else:
             sports_value = self.form_view.sports_input.text().strip() or None
             
+        # handle birth date
+        birth_date = None
+        if hasattr(self.form_view, 'birth_date_input'):
+            date = self.form_view.birth_date_input.date()
+            if date.isValid() and date != QDate.currentDate():
+                birth_date = date.toPython()  # Convert to Python date object
+        
         return {
             "first_name": self.form_view.first_name_input.text().strip(),
             "last_name": self.form_view.last_name_input.text().strip(),
             "phone": self.form_view.phone_input.text().strip() or None,
             "email": self.form_view.email_input.text().strip() or None,
+            "birth_date": birth_date,
             "occupation": self.form_view.occupation_input.text().strip() or None,
             "therapy_price": self.form_view.therapy_price_input.value() if self.form_view.therapy_price_input.value() > 0 else None,
             "sports": sports_value,

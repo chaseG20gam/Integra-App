@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import List, Optional
 
 from PyQt6.QtCore import QObject, pyqtSignal as Signal
@@ -39,6 +40,7 @@ class ClientController(QObject):
                    last_name: str,
                    phone: Optional[str] = None,
                    email: Optional[str] = None,
+                   birth_date: Optional[date] = None,
                    occupation: Optional[str] = None,
                    therapy_price: Optional[float] = None,
                    sports: Optional[str] = None,
@@ -53,6 +55,7 @@ class ClientController(QObject):
                     last_name=last_name,
                     phone=phone,
                     email=email,
+                    birth_date=birth_date,
                     occupation=occupation,
                     therapy_price=therapy_price,
                     sports=sports,
@@ -67,9 +70,9 @@ class ClientController(QObject):
             
     def update_client(self, client_id: int, first_name: str, last_name: str,
                       phone: Optional[str] = None, email: Optional[str] = None,
-                      occupation: Optional[str] = None, therapy_price: Optional[float] = None,
-                      sports: Optional[str] = None, background: Optional[str] = None,
-                      observations: Optional[str] = None) -> None:
+                      birth_date: Optional[date] = None, occupation: Optional[str] = None, 
+                      therapy_price: Optional[float] = None, sports: Optional[str] = None, 
+                      background: Optional[str] = None, observations: Optional[str] = None) -> None:
         # update existing client
         print(f"UPDATE CLIENT CALLED: ID={client_id}, name={first_name} {last_name}") # debugging
         try:
@@ -82,6 +85,7 @@ class ClientController(QObject):
                     client.last_name = last_name
                     client.phone = phone
                     client.email = email
+                    client.birth_date = birth_date
                     client.occupation = occupation
                     client.therapy_price = therapy_price
                     client.sports = sports
