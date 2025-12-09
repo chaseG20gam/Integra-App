@@ -144,9 +144,11 @@ class ClientFormDialog(QDialog):
         # handle birth date
         birth_date = None
         if hasattr(self.form_view, 'birth_date_input'):
-            date = self.form_view.birth_date_input.date()
-            if date.isValid() and date != QDate.currentDate():
-                birth_date = date.toPython()  # Convert to Python date object
+            qdate = self.form_view.birth_date_input.date()
+            if qdate.isValid():
+                # convert qdate to python date object
+                from datetime import date
+                birth_date = date(qdate.year(), qdate.month(), qdate.day())
         
         return {
             "first_name": self.form_view.first_name_input.text().strip(),

@@ -132,6 +132,15 @@ class ClientFormView(QWidget):
                 color: #E2E8F0;
                 font-size: 13px;
             }
+            QDateEdit {
+                color: #E2E8F0 !important;
+                selection-background-color: #3B82F6;
+                selection-color: #FFFFFF;
+            }
+            QDateEdit QLineEdit {
+                color: #E2E8F0 !important;
+                background-color: transparent;
+            }
             QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus, QDateEdit:focus {
                 border-color: #3B82F6;
             }

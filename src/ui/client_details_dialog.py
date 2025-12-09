@@ -56,6 +56,13 @@ class ClientDetailsDialog(QDialog):
         self._add_field(form_layout, "Apellidos:", self.client_data.last_name or "")
         self._add_field(form_layout, "Teléfono:", self.client_data.phone or "No proporcionado")
         self._add_field(form_layout, "Correo electrónico:", self.client_data.email or "No proporcionado")
+        
+        # birth date formatting
+        birth_date_text = "No especificado"
+        if hasattr(self.client_data, 'birth_date') and self.client_data.birth_date:
+            birth_date_text = self.client_data.birth_date.strftime("%d/%m/%Y")
+        self._add_field(form_layout, "Fecha de nacimiento:", birth_date_text)
+        
         self._add_field(form_layout, "Profesión:", self.client_data.occupation or "No especificado")
         
         price_text = f"€{self.client_data.therapy_price:.2f}" if self.client_data.therapy_price else "No establecido"
@@ -116,6 +123,7 @@ class ClientDetailsDialog(QDialog):
                         updated_data["last_name"],
                         updated_data["phone"],
                         updated_data["email"],
+                        updated_data["birth_date"],
                         updated_data["occupation"],
                         updated_data["therapy_price"],
                         updated_data["sports"],
@@ -132,7 +140,7 @@ class ClientDetailsDialog(QDialog):
         # apply professional theme styling
         self.setStyleSheet("""
             QDialog {
-                background-color: #0F172A;
+                background-color: #1E293B;
                 color: #E2E8F0;
             }
             QLabel {
@@ -153,7 +161,7 @@ class ClientDetailsDialog(QDialog):
                 color: #E2E8F0;
             }
             QScrollArea {
-                background-color: #1E293B;
+                background-color: #0F172A;
                 border: 1px solid #334155;
                 border-radius: 8px;
             }
